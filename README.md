@@ -1,37 +1,13 @@
-## Welcome to GitHub Pages
+## Suger-Electron 是什么？
 
-You can use the [editor on GitHub](https://github.com/SugarTeam/Sugar-Electron/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+Suger-Electron为Electron跨平台桌面应用而生，我们希望由Suger衍生出更多的上层框架，甚至打造基于Suger框架生态，帮助开发团队和开发人员降低开发和维护成本。
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## 设计原则
 
-### Markdown
+我们知道Electron应用程序有三大基础模块。
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+* 主进程
+* 渲染进程
+* 进程间通信
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/SugarTeam/Sugar-Electron/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+如果把Electron与web系统对比，相当于主进程==服务器，渲染进程==客户端web，进程间通信==Ajax。所以我们会把应用通用服务模块都迁移到主进程，随着项目迭代主进程会越发臃肿。
