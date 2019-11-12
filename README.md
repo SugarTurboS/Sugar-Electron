@@ -40,3 +40,97 @@ Suger-Electron基于类微内核架构设计，将内部分为以下六大核心
 ![设计原则](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/2.png)
 
 注：基础进程类与服务进程类同属于原渲染进程
+
+## 基础进程类
+
+### 说明
+
+Suger-Electron框架核心基础进程类，以基础进程类为载体，聚合了框架所有`核心模块`。Suger-Electron基础进程类BaseWindow继承于BrowserWindow，所以BrowserWindow所有的功能，BaseWindow都有。
+
+一般情况下，基础进程类用于创建原有的渲染进程，处理窗口UI界面相关的逻辑。
+
+注意：preload属性被Suger-Electron占用
+
+### 示例
+
+```js
+const { BaseWindow } = require('Suger');
+ 
+// 设置窗口默认设置，详情请参考Electron BrowserWindow文档
+BaseWindow.setDefaultOptions({
+   show: false
+});
+ 
+// 窗口A
+class WinA {
+    constructor() {
+        this.name = 'winA';
+        this.options = {
+            url: `file://${__dirname}/index.html`,
+            width: 800,
+            height: 600
+        }
+    }
+ 
+    open() {
+       this.instance = new BaseWindow(this.name, this.options);
+       this.instance.on('ready-to-show', () => {
+            this.instance.show();
+       });
+       this.instance.loadURL(this.options.url);
+    }
+}
+ 
+module.exports = new WinA();
+ 
+// 打开窗口A
+const { winA } = require('./windowCenter');
+winA.open();
+```
+
+## 服务进程类
+
+### 说明
+
+Suger-Electron框架提供服务进程类，开发者只需要传入启动入口文件，即可创建一个服务进程。
+
+所谓的服务进程，即承载了原来主进程应该执行的代码的渲染进程。上面有介绍到，为了保障整个应用的稳定性，我们将原来处于主进程中的业务逻辑，转移到了服务进程中。
+它本质上就是一个渲染进程，拥有渲染进程的所有能力。只是在这基础之上，框架赋予了它特殊的能力，使得它能满足我们的业务场景，变为了”服务进程“。
+
+服务进程与渲染进程区别：
+
+* 服务进程不显示界面，纯执行逻辑
+* 服务进程崩溃关闭后，可自动重启
+* 服务进程在崩溃重启后，可通过数据插件恢复现场数据
+
+### 示例
+
+服务进程代码 service.js
+
+```js
+// 服务进程service
+const { Service } = require('Suger');
+const path = require('path');
+module.exports = {
+    start() {
+        // 创建服务进程service，服务进程启动入口app.js，要写入绝对路径
+        const service = new Service('service', path.join(__dirname, 'app.js'));
+        service.on('success', function () {
+            console.log('service进程启动成功');
+        });
+       
+        service.on('fail', function () {
+            console.log('service进程启动异常');
+        });
+         
+        return service;
+    }
+}
+```
+
+主进程调用 main.js
+
+```js
+const { service } = require('./service');
+service.start();
+```
