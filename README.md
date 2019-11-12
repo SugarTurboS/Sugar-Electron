@@ -27,3 +27,16 @@ Suger-Electron也借鉴了Egg.js的设计模式，提供了一套完整的开发
 Suger-Electron具有较高的扩展性，通过插件机制，可以讲框架的部分能力与框架本身解耦，同时使用者也可以根据自己的业务场景定制插件组合到框架中，降低开发成本。
 
 ![设计原则](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/1.png)
+
+Suger-Electron基于类微内核架构设计，将内部分为以下六大核心模块：
+
+* 基础进程类
+* 服务进程类
+* 进程通信
+* 进程状态共享
+* 插件
+* 配置
+
+![设计原则](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/2.png)
+
+注：基础进程类与服务进程类同属于原渲染进程
