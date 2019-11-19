@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>窗口A</title>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+</head>
+<body>
+    <h1>窗口A-请打开调试工具查看日志</h1>
+    <button id="btn1">向winB发起B1请求</button>
+    <button id="btn2">发布消息A3</button>
+    <script type="text/javascript" src="./render.js"></script>
+    <script>if (window.module) module = window.module;</script>
+</body>
+</html>
