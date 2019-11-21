@@ -1,4 +1,4 @@
-const ipcSDK = window.ipcSDK;
+const { ipcSDK } = require('../../../core');
 window.onload = function () {
     ipcSDK.response('A1', (json, cb) => {
         cb('winA响应请求A1:');
