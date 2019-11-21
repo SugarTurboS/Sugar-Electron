@@ -12,7 +12,7 @@ class BaseWindow extends BrowserWindow {
 
     constructor(name, options = {}) {
         if (util.isBoolean(name) === false) {
-            throw new Error('process name is not null');
+            throw new Error('process name cannot be null');
         }
         const _option = Object.assign(defaultOptions, options);
 
