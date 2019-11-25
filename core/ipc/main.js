@@ -27,6 +27,7 @@ class MainSDK {
                         break;
                     case MAIN_IPC_NAME:
                         callbacks[eventName].forEach(fn => fn(body));
+                        break;
                     default:
                 }
             } catch (error) {
@@ -110,7 +111,7 @@ class MainSDK {
                 }
             }
         } catch (error) {
-            
+            console.error(error);
         }
     }
 

@@ -11,6 +11,7 @@ let appName = '';
 // 获取环境变量参数
 function getProcessArgv() {
     const argv = {};
+    // eslint-disable-next-line no-undef
     process.argv.forEach(function (item, i) {
         if (i > 0) {
             const res = item.split('=');
