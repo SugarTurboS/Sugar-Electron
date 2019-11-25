@@ -2,7 +2,8 @@
 
 [![NPM version][npm-image]][npm-url]
 
-[npm-url]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
+[npm-image]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
+[npm-url]: https://www.npmjs.com/package/sugar-electron
 
 ## Suger-Electron 是什么？
 
