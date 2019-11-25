@@ -1,9 +1,15 @@
 # Suger-Electron
 
 [![NPM version][npm-image]][npm-url]
+[![NPM quality][quality-image]][quality-url]
+[![David deps][david-image]][david-url]
 
 [npm-image]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
 [npm-url]: https://www.npmjs.com/package/sugar-electron
+[quality-image]: https://npm.packagequality.com/shield/sugar-electron.svg
+[quality-url]: http://packagequality.com/#?package=sugar-electron
+[david-image]: https://img.shields.io/david/SugarTeam/Sugar-Electron
+[david-url]: https://david-dm.org/SugarTeam/Sugar-Electron
 
 ## Suger-Electron 是什么？
 
