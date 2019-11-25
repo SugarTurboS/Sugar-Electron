@@ -3,7 +3,7 @@
 [![NPM version][npm-image]][npm-url]
 [![NPM quality][quality-image]][quality-url]
 [![David deps][david-image]][david-url]
-[![Known Vulnerabilities](https://snyk.io/test/github/SugarTeam/Sugar-Electron/badge.svg?targetFile=package.json)](https://snyk.io/test/github/SugarTeam/Sugar-Electron?targetFile=package.json)
+[![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]
 
 
 [npm-image]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
@@ -12,6 +12,8 @@
 [quality-url]: http://packagequality.com/#?package=sugar-electron
 [david-image]: https://img.shields.io/david/SugarTeam/Sugar-Electron
 [david-url]: https://david-dm.org/SugarTeam/Sugar-Electron
+[vulnerabilities-image]: https://img.shields.io/snyk/vulnerabilities/github/SugarTeam/Sugar-Electron?style=flat-square
+[vulnerabilities-url]: https://app.snyk.io/org/sugarteam/project/a50b5a82-6b37-4494-8138-7355dbb57d2a?action=retest&success=true&result=RETESTED
 
 ## Suger-Electron 是什么？
 
