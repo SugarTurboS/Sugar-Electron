@@ -1,3 +1,28 @@
+# Suger-Electron
+
+[![NPM version][npm-image]][npm-url]
+[![NPM quality][quality-image]][quality-url]
+[![David deps][david-image]][david-url]
+[![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]
+[![Lincense][lincense-image]][lincense-url]
+
+[npm-image]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
+[npm-url]: https://www.npmjs.com/package/sugar-electron
+[quality-image]: https://npm.packagequality.com/shield/sugar-electron.svg
+[quality-url]: http://packagequality.com/#?package=sugar-electron
+[david-image]: https://img.shields.io/david/SugarTeam/Sugar-Electron
+[david-url]: https://david-dm.org/SugarTeam/Sugar-Electron
+[vulnerabilities-image]: https://img.shields.io/snyk/vulnerabilities/github/SugarTeam/Sugar-Electron?style=flat-square
+[vulnerabilities-url]: https://app.snyk.io/org/sugarteam/project/a50b5a82-6b37-4494-8138-7355dbb57d2a?action=retest&success=true&result=RETESTED
+[lincese-image]: https://img.shields.io/github/license/SugarTeam/Sugar-Electron?style=flat-square
+[lincense-url]: https://github.com/SugarTeam/Sugar-Electron/blob/master/LICENSE
+
+## 安装
+
+```bash
+npm i sugar-electron --save-dev
+```
+
 ## Sugar-Electron 是什么？
 
 Sugar-Electron为Electron跨平台桌面应用而生，我们希望由Sugar-Electron衍生出更多的上层框架，甚至打造基于Sugar-Electron框架生态，帮助开发团队和开发人员降低开发和维护成本。
@@ -16,9 +41,7 @@ Sugar-Electron为Electron跨平台桌面应用而生，我们希望由Sugar-Elec
 
 为了解决诸如此类的问题，提高Electorn应用的稳定性，我们实现了Sugar-Electron这个轻量级的框架。
 
-## 安装
 
-npm i sugar-electron
 
 ## 设计原则
 
@@ -293,11 +316,13 @@ const is2 = await store.setState('none', '没有声明的state');
 
 Sugar-electron提供了多环境配置，可根据环境变量切换配置，默认加载生成环境配置。
 
+```js
 config
 |- config.base.js     // 基础配置
 |- config.js          // 生产配置
 |- config.test.js     // 测试配置——环境变量env=test
 |- config.dev.js      // 开发配置——环境变量env=dev
+```
 
 ![配置](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/5.png)
 
@@ -333,6 +358,8 @@ Sugar-electron通过框架聚合这些插件，开发者可根据自己的业务
 * 自定义封装
 * config目录配置问题plugin.js配置插件安装
 * 使用插件
+
+#### 插件封装
 
 ```js
 // 1、自定义封装ajax插件adpter
@@ -390,7 +417,11 @@ module.exports = {
         }
     }
 }
+```
 
+#### 插件安装
+
+```js
 // 2、配置插件安装
 const path = require('path');
 exports.adpter = {
@@ -400,11 +431,14 @@ exports.adpter = {
     include: ['winA'], // 插件使用范围，如果为空，则所有渲染进程安装
     params: { timeout: 20000 } // 传入插件参数
 };
+```
 
+#### 插件使用
+
+```js
 // 3、使用插件——winA
 const { plugins } = require('Sugar-electron');
 const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
-
 ```
 
 ## API文档
