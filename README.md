@@ -3,6 +3,8 @@
 [![NPM version][npm-image]][npm-url]
 [![NPM quality][quality-image]][quality-url]
 [![David deps][david-image]][david-url]
+[![Known Vulnerabilities](https://snyk.io/test/github/SugarTeam/Sugar-Electron/badge.svg?targetFile=package.json)](https://snyk.io/test/github/SugarTeam/Sugar-Electron?targetFile=package.json)
+
 
 [npm-image]: https://img.shields.io/npm/v/sugar-electron?style=flat-square
 [npm-url]: https://www.npmjs.com/package/sugar-electron
