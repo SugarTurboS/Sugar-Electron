@@ -21,7 +21,7 @@ const apis = {
 module.exports = {
     /**
      * 安装插件，每一个自定义插件必备
-     * @ctx [object] 框架上下文对象{ config, ipcSDK, storeSDK }
+     * @ctx [object] 框架上下文对象{ config, ipc, store }
      * @params [object] 配置参数
     */
     install(ctx, params = {}) {
@@ -32,17 +32,16 @@ module.exports = {
                 const { method, url } = apis[action];
                 try {
                     // 通过进程状态共享SDK获取用户ID
-                    const userId = ctx.storeSDK.getState('userId');
+                    const token = await ctx.store.getState('token');
                     const res = await axios({
                         method,
                         url: `${baseServer}${url}`,
                         data: options,
                         timeout: params.timeout // 通过插件配置超时时间
                     });
-
                     if (action === 'LOGOUT') {
                         // 通过进程间通信模块，告知主进程退出登录
-                        ctx.ipcSDK.sendToMain('LOGOUT');
+                        ctx.ipc.sendToMain('LOGOUT');
                     }
 
                     return res;

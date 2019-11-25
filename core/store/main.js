@@ -52,6 +52,5 @@ module.exports = {
     },
     createStore(store = {}) {
         this._initStore(store, storeCenter);
-        console.log(storeCenter)
     }
 };

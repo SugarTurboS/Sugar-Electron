@@ -79,8 +79,13 @@ module.exports = {
                 let timeoutFlag;
                 const requestId = util.createUUID();
                 const cb = function (json = {}) {
+                    const { code, data } = json.body || {};
                     clearTimeout(timeoutFlag);
-                    resolve(json.body);
+                    if (code === RESPONSE_OK) {
+                        resolve(data);
+                    } else {
+                        reject(json.body);
+                    }
                     delete requestCb[requestId];
                 }
                 // 超时处理

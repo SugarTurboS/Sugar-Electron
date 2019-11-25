@@ -3,12 +3,12 @@ const path = require('path');
 const { CONFIG_PATH } = require('../const');
 const configPath = remote.getGlobal(CONFIG_PATH);
 const util = require('../util');
-const plugins = {};
+const pluginsJson = {};
 // 安装插件
 try {
     const ctx = {
-        ipcSDK: require('../ipcSDK'),
-        storeSDK: require('../store'),
+        ipc: require('../ipc'),
+        store: require('../store'),
         config: require('../config')
     }
     const threadId = util.getThreadId();
@@ -18,11 +18,11 @@ try {
         const { include, enable, package, params } = item;
         const isInclude = !util.isArray(include) || include.length === 0 || include.indexOf(threadId) > -1;
         if (isInclude && enable) {
-            plugins[key] = require(package || item.path).install(ctx, params);
+            pluginsJson[key] = require(package || item.path).install(ctx, params);
         }
     }
 } catch (error) {
     console.error(error);
 }
 
-module.exports = plugins;
+module.exports = pluginsJson;

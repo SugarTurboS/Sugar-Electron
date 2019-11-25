@@ -1,6 +1,6 @@
 const { BrowserWindow } = require('electron');
 const util = require('../util');
-const ipcSDK = require('../ipcSDK');
+const ipc = require('../ipc');
 // 窗体默认属性
 const defaultOptions = {};
 
@@ -12,7 +12,7 @@ class BaseWindow extends BrowserWindow {
 
     constructor(name, options = {}) {
         if (util.isBoolean(name) === false) {
-            throw new Error('process name is not null');
+            throw new Error('process name cannot be null');
         }
         const _option = Object.assign(defaultOptions, options);
 
@@ -21,10 +21,10 @@ class BaseWindow extends BrowserWindow {
         // 窗口ID，必须
         this.windowId = name;
 
-        ipcSDK._register(name, this);
+        ipc._register(name, this);
 
         this.on('closed', () => {
-            ipcSDK._unregister(name);
+            ipc._unregister(name);
         });
     }
 }
