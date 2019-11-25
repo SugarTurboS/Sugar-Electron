@@ -1,3 +1,9 @@
+# Suger-Electron
+
+[![NPM version][npm-image]][npm-url]
+
+[npm-url]: https://www.npmjs.com/package/sugar-electron
+
 ## Suger-Electron 是什么？
 
 Suger-Electron为Electron跨平台桌面应用而生，我们希望由Suger衍生出更多的上层框架，甚至打造基于Suger框架生态，帮助开发团队和开发人员降低开发和维护成本。
@@ -133,3 +139,331 @@ module.exports = {
 const { service } = require('./service');
 service.start();
 ```
+
+## 进程状态共享
+
+### 说明
+
+Suger是多进程架构设计，在业务系统中，避免不了多个业务进程共享状态。由于进程间内存相互独立，不互通，为此Suger框架集成了进程状态共享模块。
+
+进程状态共享模块分成两个部分：
+
+主进程申明共享状态数据，渲染进程设置、获取共享状态数据
+
+### 示例
+
+```js
+// 状态模块moduleA
+module.exports = {
+    state: {
+        b: 2
+    }
+}
+
+// 状态模块moduleB
+module.exports = {
+    state: {
+        c: 3
+    }
+}
+
+// store模块
+const moduleA = require('./moduleA');
+const moduleB = require('./moduleB');
+module.exports = {
+    state: {
+        a: 1
+    },
+    modules: {
+        moduleA,
+        moduleB
+    }
+}
+
+// 主进程——初始化申明state
+const { store } = require('Suger');
+const states = require('./store');
+store.createStore(states);
+
+// 渲染进程
+const { ipcSDK } = require('Suger'); 
+const r1 = await storeSDK.getState('a'); // 1
+
+const moduleA = await storeSDK.getModule('moduleA');
+const r2 = await moduleA.getState('b'); // 2
+
+const is = await storeSDK.setState('a', 'a'); // true
+const r3 = await storeSDK.getState('a'); // a
+
+const is = await storeSDK.setState('b', 'a'); // Error: 找不到store state key => .b，请在主进程初始化store中声明
+
+```
+
+### 接口
+
+#### 主进程模块接口
+
+创建状态共享模块：createStore(store:Store)
+
+store: 初始化申明state Store: { state: Object, modules: { module:Store } }
+
+#### 渲染进程模块接口
+
+设置state：setState(key:String, value: Any)
+
+获取state：getState(key:String)
+
+获取模块：getModule(moduleName:String)
+
+返回： setState: 设置当前模块state getState: 获取当前模块state getModule: 获取当前模块的子模块
+
+## 进程通信
+
+### 说明
+
+Suger是多进程架构设计，进程间通信模块必不可少。
+
+支持两种通信方式：
+
+* 请求响应
+* 发布订阅
+
+### 请求响应
+
+```js
+const { ipcSDK } = require('Suger');  
+// 进程A注册响应服务A1
+ipcSDK.response('A1', (json, cb) => {
+   cb('winA响应请求A1:');
+   console.log(json);
+});
+     
+// 进程B向进程A发起请求A1
+const r = await ipcSDK.request('winA', 'A1', {data: '请求参数'});
+console.log('响应', r);
+```
+
+![进程通信](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/5.png)
+
+![进程通信](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/3.png)
+
+#### 通信异常状态码
+
+状态码（code） | 说明 
+-|-
+0 | 成功
+1 | 找不到进程
+2 | 找不到进程注册服务 
+3 | 超时
+
+### 发布订阅
+
+```js
+const { ipcSDK } = require('Suger');
+function cbA3(data) {
+   console.log('收到A3订阅消息：', data);
+}   
+// 进程B向进程A订阅消息A3
+ipcSDK.subscriber('winA', 'A3', cbA3);
+     
+// 进程A发布消息A3
+ipcSDK.publisher('A3', { msg: '你好，我是A3消息'});
+```
+
+![进程通信](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/4.png)
+
+### 与主进程通信
+
+Suger-Electron框架设计理念所有业务模块都有各个渲染进程完成，所以基本上不存在与主进程通信的功能，但也非绝无仅有。所以Suger进程通信模块支持与主进程通信接口。
+
+```js
+
+const { ipcSDK } = require('Suger');
+// 渲染进程winA订阅主进程'main-test'
+ipcSDK.onFromMain('main-test', (data) => {
+    console.log(data);
+});
+     
+// 主进程发布'main-test'
+ipcSDK.sendToRender('winA', 'main-test', { msg: '你好，我是A3消息'});
+```
+
+注：渲染进程订阅消息队列在主进程内缓存，所以发布服务进程重启不需要重新订阅，且通过监听渲染进程关闭事件，可自动释放对应的渲染进程缓存消息队列。
+
+### 接口
+
+#### 主进程模块接口
+
+##### 发布消息：sendToRender(processName:String, eventName:String, params:Any)
+
+-主进程发布消息到指定渲染进程 processName: 进程名 eventName: 事件名 cb: 回调函数
+
+##### 绑定：onFromRender(eventName:String, cb:Function)
+
+-绑定渲染进程发送到主进程消息 eventName: 事件名 cb: 回调函数
+
+##### 解绑：removeListenerFromRender(eventName:String, cb:Function)
+
+-解绑渲染进程发送到主进程消息 eventName: 事件名 cb: 回调函数
+
+##### 解绑所有：removeListenerFromRender(eventName:String)
+
+-解绑渲染进程发送到主进程消息 eventName: 事件名
+
+#### 渲染进程模块接口介绍
+
+##### 设置响应超时：setDefaultRequestTimeout(timeout:Number)
+
+timeout: 超时时间，默认20s
+
+##### 请求：request(toId:String, eventName:String, data:Object, timeout:Number)
+
+toId: 请求服务进程ID（注册通信进程模块名） eventName: 服务进程响应事件名 data: 请求参数 timeout: 超时时间，默认20s return: 返回Promise对象
+
+##### 注册响应服务：response(eventName:String, callback:Function)
+
+eventName: 响应事件名 callback: 回调函数
+
+##### 发布：publisher(eventName:String, params:Object)
+
+eventName: 消息名 params: 消息参数
+
+##### 订阅：subscriber(toId:String, eventName:String, callback:Function)
+
+toId: 订阅消息进程ID（注册通信进程模块名） eventName: 消息名 callback: 回调函数
+
+##### 退订：unsubscribe(toId:String, eventName:String, callback:Function)
+
+toId: 订阅消息进程ID（注册通信进程模块名） eventName: 消息名 callback: 回调函数
+
+##### 发布消息：sendToMain(eventName:String, params:Any)
+
+渲染进程发布消息到主进程 eventName: 事件名 cb: 回调函数
+
+##### 绑定：onFromMain(eventName:String, cb:Function)
+
+绑定主进程发送到渲染进程消息 eventName: 事件名 cb: 回调函数
+
+##### 解绑：removeListenerFromMain(eventName:String, cb:Function)
+
+解绑主进程发送到渲染进程消息 eventName: 事件名 cb: 回调函数
+
+##### 解绑所有：removeAllListenerFromMain(eventName:String)
+
+解绑渲染进程发送到渲染进程消息 eventName: 事件名
+
+## 插件
+
+### 说明
+
+一个好用的框架离不开框架的可扩展性，Suger-Electron插件模块提供开发者扩展Suger-Electron功能的能力。
+
+Suger-Electron通过框架聚合这些插件，开发者可根据自己的业务场景定制配置，开发应用成本变得更低。
+
+### 如何实现一个插件
+
+```js
+// 自定义插件adpter
+const axios = require('axios');
+const apis = {
+    FETCH_DATA_1: {
+        url: '/XXXXXXX1',
+        method: 'POST'
+    },
+    FETCH_DATA_2: {
+        url: '/XXXXXXX2',
+        method: 'GET'
+    },
+    FETCH_DATA_3: {
+        url: '/XXXXXXX3',
+        method: 'PUT'
+    },
+    FETCH_DATA_4: {
+        url: '/XXXXXXX4',
+        method: 'POST'
+    }
+}
+ 
+module.exports = {
+    /**
+     * 安装插件，每一个自定义插件必备
+     * @ctx [object] 框架上下文对象{ config, ipcSDK, storeSDK }
+     * @params [object] 配置参数
+    */
+    install(ctx, params = {}) {
+        // 通过配置文件读取基础服务配置
+        const baseServer = ctx.config.baseServer;
+        return {
+            async callAPI(action, options) {
+                const { method, url } = apis[action];
+                try {
+                    // 通过进程状态共享SDK获取用户ID
+                    const userId = await ctx.storeSDK.getState('userId');
+                    const res = await axios({
+                        method,
+                        url: `${baseServer}${url}`,
+                        data: options,
+                        timeout: params.timeout // 通过插件配置超时时间
+                    });
+ 
+                    if (action === 'LOGOUT') {
+                        // 通过进程间通信模块，告知主进程退出登录
+                        ctx.ipcSDK.sendToMain('LOGOUT');
+                    }
+ 
+                    return res;
+                } catch (error) {
+                    throw error;
+                }
+            }
+        }
+    }
+}
+```
+
+### 插件的使用
+
+```js
+// 配置文件目录config/plugin.js
+const path = require('path');
+exports.adpter = {
+    enable: true, // 是否启动插件
+    path: path.join(__dirname, '../plugins/adpter'), // 插件绝对路径
+    // package: 'adpter', // 插件包名，如果package与path同时存在，则package优先级更高
+    include: ['winA'], // 插件使用范围，如果为空，则所有渲染进程安装
+    params: { timeout: 20000 } // 传入插件参数
+};
+ 
+// 渲染进程winA使用
+const { plugins} = require('Suger');
+const res = await plugins.callAPI('FETCH_DATA_1', {});
+```
+
+## 配置
+
+### 说明
+
+Suger提供了多环境配置，可根据环境变量切换配置，默认加载生成环境配置。
+
+你可以在应用程序的config目录下按照如下规则定义配置文件
+
+config
+|- config.base.js             // 基础配置
+|- config.js                     // 生产配置
+|- config.test.js              // 测试配置——环境变量env=test
+|- config.dev.js              // 开发配置——环境变量env=dev
+
+也可以通过在appdata目录中，创建config.json文件来覆盖应用配置
+
+AppData/appName目录配置文件config.json
+
+```js
+{
+"env": "环境变量",
+"config": "配置"
+}
+```
+![配置](https://github.com/SugarTeam/Sugar-Electron/blob/master/pictures/6.png)
+
+
+
