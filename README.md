@@ -447,11 +447,13 @@ Suger提供了多环境配置，可根据环境变量切换配置，默认加载
 
 你可以在应用程序的config目录下按照如下规则定义配置文件
 
+```js
 config
 |- config.base.js             // 基础配置
 |- config.js                     // 生产配置
 |- config.test.js              // 测试配置——环境变量env=test
 |- config.dev.js              // 开发配置——环境变量env=dev
+```
 
 也可以通过在appdata目录中，创建config.json文件来覆盖应用配置
 
