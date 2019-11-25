@@ -14,7 +14,7 @@
 [david-url]: https://david-dm.org/SugarTeam/Sugar-Electron
 [vulnerabilities-image]: https://img.shields.io/snyk/vulnerabilities/github/SugarTeam/Sugar-Electron?style=flat-square
 [vulnerabilities-url]: https://app.snyk.io/org/sugarteam/project/a50b5a82-6b37-4494-8138-7355dbb57d2a?action=retest&success=true&result=RETESTED
-[lincese-image]: https://img.shields.io/github/license/SugarTeam/Sugar-Electron?style=flat-square
+[lincense-image]: https://img.shields.io/github/license/SugarTeam/Sugar-Electron?style=flat-square
 [lincense-url]: https://github.com/SugarTeam/Sugar-Electron/blob/master/LICENSE
 
 ## 安装
