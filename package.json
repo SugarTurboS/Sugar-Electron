@@ -1,12 +1,16 @@
 {
-  "name": "@student/suger",
-  "version": "1.0.1",
+  "name": "sugar-electron",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "D:\\work\\easiclass-pc-new\\output\\EasiClass.exe test/index.js"
+    "test": "electron test/index.js"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Tomey",
+  "license": "ISC",
+  "homepage": "https://github.com/SugarTeam/Sugar-Electron",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SugarTeam/Sugar-Electron.git"
+  }
 }

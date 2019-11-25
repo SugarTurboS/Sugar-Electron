@@ -15,7 +15,10 @@ app.on('ready', function () {
 
    // 设置窗口默认设置
    BaseWindow.setDefaultOptions({
-      show: false
+      show: true,
+      webPreferences: {
+         nodeIntegration: true
+      }
    });
 
    const { winA, winB, service } = require('./windowCenter');

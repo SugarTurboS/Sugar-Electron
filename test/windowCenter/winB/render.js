@@ -1,6 +1,6 @@
-const { ipcSDK } = require('../../../core');
+const { ipc } = require('../../../core');
 window.onload = function () {
-    ipcSDK.response('B1', (json, cb) => {
+    ipc.response('B1', (json, cb) => {
         cb('winB响应请求B1:');
     });
 
@@ -10,23 +10,23 @@ window.onload = function () {
 
     document.querySelector('#btn1').onclick = async function () {
         console.time();
-        const r = await ipcSDK.request('winA', 'A1', 'winB发出一条请求A1');
+        const r = await ipc.request('winA', 'A1', 'winB发出一条请求A1');
         console.timeEnd();
         console.log('响应', r);
     }
 
     document.querySelector('#btn2').onclick = async function () {
         console.time();
-        const r = await ipcSDK.request('winA', 'A2', 'winB发出一条请求A2');
+        const r = await ipc.request('winA', 'A2', 'winB发出一条请求A2');
         console.timeEnd();
         console.log('响应', r);
     }
 
     document.querySelector('#btn3').onclick = async function () {
-        ipcSDK.subscriber('winA', 'A3', cbA3);
+        ipc.subscriber('winA', 'A3', cbA3);
     }
 
     document.querySelector('#btn4').onclick = async function () {
-        ipcSDK.unsubscriber('winA', 'A3', cbA3);
+        ipc.unsubscriber('winA', 'A3', cbA3);
     }
 }

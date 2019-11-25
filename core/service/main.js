@@ -1,5 +1,5 @@
 const { BrowserWindow } = require('electron');
-const ipcSDK = require('../ipcSDK');
+const ipc = require('../ipc');
 const Events = require('events');
 const path = require('path');
 class Service extends Events {
@@ -28,12 +28,12 @@ class Service extends Events {
                 }
             });
          
-            ipcSDK._register(this.name, this.bs);
+            ipc._register(this.name, this.bs);
 
             this.bs.windowId = this.name;
 
             this.bs.on('closed', () => {
-                ipcSDK._unregister(this.name);
+                ipc._unregister(this.name);
                 this.emit('closed');
                 setTimeout(() => {
                     this.start();

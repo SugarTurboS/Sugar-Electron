@@ -1,4 +1,4 @@
-exports.IPC_NAME = 'ipcSdk:postMessage';
+exports.IPC_NAME = 'ipc:postMessage';
 exports.MAIN_IPC_NAME = 'MAIN_IPC_NAME';// 主进程通信
 exports.REQUEST_REPONSE = 'RESQUEST/RESPONSE';
 exports.PUBLISHER = 'PUBLISHER';
