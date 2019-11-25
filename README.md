@@ -146,6 +146,8 @@ ipc作为Sugar-electron进程间通信核心模块，支持两种通信方式：
 
 ![进程间通信](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/3.png)
 
+![进程间通信](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/6.png)
+
 #### 示例
 
 ```js
@@ -182,9 +184,11 @@ try {
 
 Sugar-electron对响应异常做处理。
 
-* code=1，找不到进程响应
-* code=2，找不到进程注册服务响应
-* code=3，超时响应
+状态码（code） | 说明 
+-|-
+1 | 找不到进程
+2 | 找不到进程注册服务 
+3 | 超时
 
 ### 发布订阅
 
