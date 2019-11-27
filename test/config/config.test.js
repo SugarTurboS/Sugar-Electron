@@ -1,3 +1,3 @@
 module.exports = {
-    "value": "我是测试配置"
+    "value": "test"
 }
