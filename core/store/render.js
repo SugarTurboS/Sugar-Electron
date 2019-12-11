@@ -41,6 +41,7 @@ module.exports = {
         return this._getModule(moduleName);
     },
     _setState(key, value, modules = []) {
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
             const r = await send(SET_STATE, { key, value, modules });
             if (r) {

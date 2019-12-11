@@ -1,10 +1,11 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+// eslint-disable-next-line no-undef
 const DEFAULT_PATH = path.join(process.cwd(), 'config');
 const APP_DATA = path.join(os.homedir(), '/AppData/Roaming');
-const { CONFIG_PATH, CONFIG_GET } = require('../const');
-global[CONFIG_PATH] = DEFAULT_PATH;
+const { SUGAR_OPTION, CONFIG_GET } = require('../const');
+global[SUGAR_OPTION].configPath = DEFAULT_PATH;
 let config = null;
 let appName = '';
 
@@ -60,8 +61,8 @@ const getConfig = global[CONFIG_GET] = function () {
         const appData = getConfigFromAppData(appName);
         const argv = getProcessArgv();
         const env = appData.env || argv.env || '';
-        const baseLocalConfig = getLocalBaseConfig(global[CONFIG_PATH]);
-        const localConfig = getLocalConfig(global[CONFIG_PATH], env);
+        const baseLocalConfig = getLocalBaseConfig(global[SUGAR_OPTION].configPath);
+        const localConfig = getLocalConfig(global[SUGAR_OPTION].configPath, env);
         config = Object.assign({ argv }, baseLocalConfig, localConfig, appData.config);
     }
     return config;
@@ -77,7 +78,7 @@ module.exports = {
      * */
     setOption(params = {}) {
         appName = params.appName || '';
-        global[CONFIG_PATH] = params.configPath;
+        global[SUGAR_OPTION].configPath = params.configPath;
         return getConfig();
     }
 };

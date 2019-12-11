@@ -17,9 +17,11 @@ ipcMain.on(IPC_NAME, (e, params = {}) => {
                 retureData = cacheStore;
                 break;
             case SET_STATE:
+                // eslint-disable-next-line no-cond-assign
                 if (retureData = cacheStore[key] !== undefined) {
                     cacheStore[key] = value;
                 }
+                break;
             default:
         }  
     } catch (error) {

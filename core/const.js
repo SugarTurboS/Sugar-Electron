@@ -1,2 +1,2 @@
-exports.CONFIG_PATH = 'electron_core_config_path';
-exports.CONFIG_GET = 'electron_core_config_GET';
+exports.CONFIG_GET = 'ELECTRON_SUGAR:CONFIG_GET';
+exports.SUGAR_OPTION = 'ELECTRON_SUGAR:SUGAR_OPTION';

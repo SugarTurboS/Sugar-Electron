@@ -1,4 +1,4 @@
-exports.IPC_NAME = 'ipcStore:postMessage';
-exports.GET_STATE = 'get_state';
-exports.SET_STATE = 'set_state';
-exports.GET_MODULE = 'get_module';
+exports.IPC_NAME = 'ELECTRON_SUGAR:IPC_NAME_STORE';
+exports.GET_STATE = 'ELECTRON_SUGAR:GET_STATE';
+exports.SET_STATE = 'ELECTRON_SUGAR:SET_STATE';
+exports.GET_MODULE = 'ELECTRON_SUGAR:GET_MODULE';
