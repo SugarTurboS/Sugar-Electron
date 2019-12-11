@@ -1,3 +1,3 @@
 module.exports = {
-    "value": "dev"
+    "value": "我是开发配置"
 }

@@ -1,3 +1,3 @@
 module.exports = {
-    "value": "release"
+    "value": "我是正式配置"
 }

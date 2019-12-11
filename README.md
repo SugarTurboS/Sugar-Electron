@@ -1,4 +1,4 @@
-# Suger-Electron
+# Sugar-Electron
 
 [![NPM version][npm-image]][npm-url]
 [![NPM quality][quality-image]][quality-url]

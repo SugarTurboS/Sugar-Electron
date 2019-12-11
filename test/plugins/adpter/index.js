@@ -30,9 +30,11 @@ module.exports = {
         return {
             async callAPI(action, options) {
                 const { method, url } = apis[action];
+                // eslint-disable-next-line no-useless-catch
                 try {
                     // 通过进程状态共享SDK获取用户ID
                     const token = await ctx.store.getState('token');
+                    options.token = token;
                     const res = await axios({
                         method,
                         url: `${baseServer}${url}`,
@@ -43,7 +45,6 @@ module.exports = {
                         // 通过进程间通信模块，告知主进程退出登录
                         ctx.ipc.sendToMain('LOGOUT');
                     }
-
                     return res;
                 } catch (error) {
                     throw error;

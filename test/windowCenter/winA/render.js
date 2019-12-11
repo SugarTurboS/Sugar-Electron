@@ -18,7 +18,8 @@ window.onload = function () {
         });
     }
 
-    ipc.onFromMain('main-test', (data) => {
-        console.log(data);
+    ipc.subscriber('winA', 'blur', () => {
+        console.log('=====blur')
     });
 }
+

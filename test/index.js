@@ -1,18 +1,19 @@
-const { app } = require('electron');
-const path = require('path');
+const { app} = require('electron');
 const appName = 'electron-core';
-const configPath = path.join(__dirname, './config');
+// eslint-disable-next-line no-undef
 app.on('ready', function () {
-   const { BaseWindow, config, store } = require('../core');
-   const states = require('./store');
-   const configData = config.setOption({ appName, configPath });
+   const { start, BaseWindow, config, windowCenter } = require('../core');
 
-   // 初始化store
-   store.createStore(states);
+   start({
+      appName,
+      // eslint-disable-next-line no-undef
+      basePath: __dirname
+   });
+
+   const configData = config.getConfig();
 
    // 打印配置
    console.log('[configData]', configData);
-
    // 设置窗口默认设置
    BaseWindow.setDefaultOptions({
       show: true,
@@ -21,9 +22,9 @@ app.on('ready', function () {
       }
    });
 
-   const { winA, winB, service } = require('./windowCenter');
-
-   service.start();
+   const { winA, winB } = windowCenter;
+   const service = require('./services/service');
+   service.start(false);
    winA.open();
    winB.open();
 });
