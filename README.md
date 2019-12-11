@@ -1,4 +1,4 @@
-# Sugar-Electron
+# Suger-Electron
 
 [![NPM version][npm-image]][npm-url]
 [![NPM quality][quality-image]][quality-url]
@@ -63,6 +63,7 @@ Sugar-Electron基于类微内核架构设计，将内部分为以下六大核心
 * 进程状态共享
 * 配置
 * 插件
+* 进程管理中心
 
 ![设计原则](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/2.png)
 
@@ -72,7 +73,9 @@ Sugar-Electron基于类微内核架构设计，将内部分为以下六大核心
 
 ### 说明
 
-Sugar-Electron框架核心基础进程类，以基础进程类为载体，聚合了框架所有`核心模块`。Sugar-Electron基础进程类BaseWindow继承于BrowserWindow，所以BrowserWindow所有的功能，BaseWindow都有。
+Sugar-Electron框架核心基础进程类，以基础进程类为载体，聚合了框架所有`核心模块`。Sugar-Electron基础进程类BaseWindow基于BrowserWindow二次封装，新增方法：
+- open() // 创建一个BrowserWindow示例，并返回
+- getInstance // 获取BrowserWindow示例，示例未创建则返回null
 
 一般情况下，基础进程类用于创建原有的渲染进程，处理窗口UI界面相关的逻辑。
 
@@ -88,28 +91,17 @@ BaseWindow.setDefaultOptions({
 });
  
 // 窗口A
-class WinA {
-    constructor() {
-        this.name = 'winA';
-        this.options = {
-            url: `file://${__dirname}/index.html`,
-            width: 800,
-            height: 600
-        }
-    }
- 
-    open() {
-       this.instance = new BaseWindow(this.name, this.options);
-       this.instance.on('ready-to-show', () => {
-            this.instance.show();
-       });
-       this.instance.loadURL(this.options.url);
-    }
+const { BaseWindow } = require('../../../core');
+const NAME = 'winA';
+const OPTIONS = {
+    url: `file://${__dirname}/index.html`,
+    width: 800,
+    height: 600,
+    thickFrame: false
 }
-
-const winA = new WinA();
+const winA = new BaseWindow(NAME, OPTIONS);
  
-// 打开窗口A
+// 创建窗口进程A
 winA.open();
 ```
 
@@ -267,6 +259,55 @@ ipc.sendToRender('winA', 'main-send', '我是主进程');
 // main 我是渲染进程
 ```
 
+## 进程管理中心——windowCenter
+
+### 说明
+
+Sugar-electron是是多进程架构设计，在业务系统中，避免不了进程间相互调用，由于进程间彼此独立且进程可能并没有创建，并不能通过ipc消息调用。
+
+sugar-electron核心模块windowCenter就是为了解决此类问题存在，保证所有的业务逻辑在独立在各个进程内完成，屏蔽中间进程通信流程。
+
+windowCenter默认根据根目录windowCenter自动挂载基础进程
+
+#### 示例
+例如：窗口A内打开窗口B，并在窗口B webContents初始化完成后,设置窗口B setSize(1000, 1000)。
+```js
+// 根目录windowCenter
+// winA
+const { BaseWindow } = require('../../../core');
+const NAME = 'winA';
+const OPTIONS = {
+    url: `file://${__dirname}/index.html`,
+    width: 800,
+    height: 600,
+    thickFrame: false
+}
+module.exports = new BaseWindow(NAME, OPTIONS);
+
+// winB
+const { BaseWindow } = require('../../../core');
+const NAME = 'winA';
+const OPTIONS = {
+    url: `file://${__dirname}/index.html`,
+    width: 800,
+    height: 600,
+    thickFrame: false
+}
+module.exports = new BaseWindow(NAME, OPTIONS);
+
+// winA-渲染进程
+const { windowCenter } = require('Sugar-electron');
+const winB = windowCenter.winB; // 获取窗口B句柄
+await winB.open(); // 打开窗口B
+// 订阅winB初始化消息
+winB.subscriber('ready-to-show', async () => {
+    await winB.setSize(1000, 1000);
+    await winB.getSize(1000, 1000); // [1000, 1000]
+});
+
+```
+备注：服务进程句柄通过windowCenter也可以获取
+
 ## 进程间状态共享——store
 
 ### 说明
@@ -276,6 +317,8 @@ Sugar-electron是多进程架构设计，在业务系统中，避免不了多个
 进程状态共享模块分成两个部分：
 * 主进程申明共享状态数据
 * 渲染进程设置、获取共享状态数据
+
+store默认根据根目录store自动初始化
 
 #### 示例
 
@@ -356,7 +399,7 @@ Sugar-electron通过框架聚合这些插件，开发者可根据自己的业务
 
 使用一款插件，需要三个步骤：
 * 自定义封装
-* config目录配置问题plugin.js配置插件安装
+* config目录配置问题plugins.js配置插件安装
 * 使用插件
 
 #### 插件封装
@@ -477,33 +520,14 @@ setOption({ appName, configPath })
 ### 进程间通信ipc
 ```js
 // 主进程
-/**
- * 发布消息
- * @processName [string] 进程名
- * @eventName [string] 事件名
- * @params 参数
- */
-sendToRender(processName, eventName, params)
 
 /**
- * 订阅
- * @eventName [string] 事件名
- * @cb [function] 回调
+ * 响应，主进程名`main`，渲染进程通过ipc.request('main', eventName)请求主进程服务
+ * @eventName [string] 事件名  
+ * @callback [function] 回调
  */
-onFromRender(eventName, cb)
+response(eventName, callback)
 
-/**
- * 取消订阅
- * @eventName [string] 事件名
- * @cb [function] 回调
- */
-removeListenerFromRender(eventName, cb)
-
-/**
- * 取消所有订阅
- * @eventName [string] 事件名
- */
-removeListenerFromRender(eventName)
 
 // 渲染进程
 /**
@@ -552,34 +576,10 @@ subscriber(toId, eventName, callback)
  */
 unsubscribe(toId, eventName, callback)
 
-/**
- * 发布消息
- * @eventName [string] 事件名
- * @params 参数
- */
-sendToMain(eventName, params)
-
-/**
- * 订阅
- * @eventName [string] 事件名
- * @cb [function] 回调
- */
-onFromMain(eventName, cb)
-
-/**
- * 取消订阅
- * @eventName [string] 事件名
- * @cb [function] 回调
- */
-removeListenerFromMain(eventName, cb)
-
-/**
- * 取消所有订阅
- * @eventName [string] 事件名
- */
-removeAllListenerFromMain(eventName)
-
 ```
+### 进程管理中心windowCenter
+在主进程、渲染进程获取进程句柄，例如窗口A windowCenter['winA'];
+
 ### 进程间状态共享store
 ```js
 // 主进程
