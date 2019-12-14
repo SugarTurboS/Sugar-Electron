@@ -29,4 +29,12 @@ window.onload = function () {
     document.querySelector('#btn4').onclick = async function () {
         ipc.unsubscriber('winA', 'A3', cbA3);
     }
+
+    ipc.subscriber('winA', 'blur', () => {
+        console.log('=====blur')
+    });
+
+    ipc.subscriber('winA', 'closed', () => {
+        console.log('=====closed')
+    });
 }

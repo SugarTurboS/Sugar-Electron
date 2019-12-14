@@ -4,7 +4,6 @@ const {
     RESPONSE_OK,
     RESPONSE_OVERTIME,
     RESPONSE_NOT_FOUND,
-    MAIN_IPC_NAME,
     PUBLISHER,
     SUBSCRIBER,
     UNSUBSCRIBER,
@@ -14,7 +13,6 @@ const {
 const requestCb = {};
 const requestHandler = {};
 const subscriberCb = {};
-const mainCb = {};
 let defaultRequestTimeout = 20000; // 请求响应超时，默认值
 // 发送消息
 function send(json = {}) {
@@ -52,9 +50,6 @@ ipcRenderer.on(IPC_NAME, function (e, params = {}) {
                 break;
             case SUBSCRIBER:
                 subscriberCb[requestId] && subscriberCb[requestId](body);
-                break;
-            case MAIN_IPC_NAME:
-                mainCb[eventName].forEach(fn => fn(body));
                 break;
             default:
         }
@@ -112,7 +107,7 @@ module.exports = {
     // 注册响应服务
     response(eventName, callback) {
         try {
-            const cteateCb = function (header) {
+            const createCb = function (header) {
                 return function (result) {
                     send({
                         header: {
@@ -130,7 +125,7 @@ module.exports = {
                 }
             }
             requestHandler[eventName] = function (json) {
-                const cb = cteateCb(json.header);
+                const cb = createCb(json.header);
                 callback && callback(json.body, cb);
             };
         } catch (error) {
@@ -187,36 +182,5 @@ module.exports = {
                 }
             }
         }
-    },
-    // 发送主进程消息
-    sendToMain(eventName, params) {
-        send({
-            header: { model: MAIN_IPC_NAME, eventName },
-            body: params
-        });
-    },
-    // 监听主进程消息
-    onFromMain(eventName, cb) {
-        if (!mainCb[eventName]) {
-            mainCb[eventName] = [];
-        }
-        mainCb[eventName].push(cb);
-    },
-    // 主进程监听解绑
-    removeListenerFromMain(eventName, cb) {
-        const arr = mainCb[eventName] || [];
-        for (let i = 0; i < arr.length; i++) {
-            if (arr[i] === cb) {
-                mainCb[eventName].splice(i, 1);
-                break;
-            }
-        }
-        if (mainCb[eventName] && mainCb[eventName].length) {
-            delete mainCb[eventName];
-        }
-    },
-
-    removeAllListenerFromMain(eventName) {
-        delete mainCb[eventName];
     }
 }

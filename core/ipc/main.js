@@ -1,14 +1,14 @@
 const { ipcMain } = require('electron');
-const { SERVICE_NOT_FOUND, MAIN_IPC_NAME, REQUEST_REPONSE, PUBLISHER, SUBSCRIBER, UNSUBSCRIBER, IPC_NAME } = require('./const');
+const { SERVICE_NOT_FOUND, RESPONSE_OK, REQUEST_REPONSE, PUBLISHER, SUBSCRIBER, UNSUBSCRIBER, IPC_NAME } = require('./const');
 const processes = {}; // 进程模块合集
-const callbacks = {}; // 主进程注册回调
 const subscriberTasks = {}; // 缓存进程订阅任务
+const responseCallbacks = {};
 class MainSDK {
     constructor() {
         ipcMain.on(IPC_NAME, (e, params = {}) => {
             try {
-                const { header, body } = params;
-                const { model, eventName } = header;
+                const { header} = params;
+                const { model } = header;
                 switch (model) {
                     // 请求、响应
                     case REQUEST_REPONSE:
@@ -23,10 +23,7 @@ class MainSDK {
                         break;
                     // 发布
                     case PUBLISHER:
-                        this._publisher(params);
-                        break;
-                    case MAIN_IPC_NAME:
-                        callbacks[eventName].forEach(fn => fn(body));
+                        this.publisher(params);
                         break;
                     default:
                 }
@@ -38,17 +35,54 @@ class MainSDK {
 
     // 请求响应消息转发
     _requestResponseMessageForwarding(params = {}) {
-        const { toId } = params.header;
-        if (processes[toId]) {
-            // 如果进程被销毁，则立即通知
-            if (processes[toId].isDestroyed()) {
-                this.unregister(toId);
-                this._responseNoSerice(params.header);
-            } else {
-                processes[toId].webContents.send(IPC_NAME, params);
-            }
+        const { toId, eventName } = params.header;
+        // 向主进程请求
+        if (toId === 'main') {
+            responseCallbacks[eventName](params);
         } else {
-            this._responseNoSerice(params.header);
+            if (processes[toId]) {
+                // 如果进程被销毁，则立即通知
+                if (processes[toId].isDestroyed()) {
+                    this.unregister(toId);
+                    this._responseNoSerice(params.header);
+                } else {
+                    processes[toId].webContents.send(IPC_NAME, params);
+                }
+            } else {
+                this._responseNoSerice(params.header);
+            }
+        }
+    }
+
+    response(eventName, callback) {
+        try {
+            const createCb = (header) => {
+                return (result) => {
+                    this._send({ header, body: { code: RESPONSE_OK, data: result }});
+                }
+            }
+            responseCallbacks[eventName] = function (json) {
+                const cb = createCb(json.header);
+                callback && callback(json.body, cb);
+            };
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    _send(params = {}) {
+        try {
+            const { header = {}, body } = params;
+            const { fromId, toId } = header;
+            processes[fromId].webContents.send(IPC_NAME, {
+                header: Object.assign(header, {
+                    fromId: toId,
+                    toId: fromId
+                }),
+                body
+            });
+        } catch (error) {
+            console.error(error);
         }
     }
 
@@ -88,7 +122,7 @@ class MainSDK {
     }
 
     // 发布消息
-    _publisher(params = {}) {
+    publisher(params = {}) {
         try {
             const { fromId, eventName } = params.header;
             for (let fromKey in subscriberTasks[fromId]) {
@@ -117,21 +151,7 @@ class MainSDK {
 
     // 找不到服务
     _responseNoSerice(header = {}) {
-        try {
-            const { fromId, toId } = header;
-            processes[fromId].webContents.send(IPC_NAME, {
-                header: Object.assign(header, {
-                    fromId: toId,
-                    toId: fromId
-                }),
-                body: {
-                    code: SERVICE_NOT_FOUND,
-                    msg: `找不到服务${toId}`
-                }
-            });
-        } catch (error) {
-            console.error(error);
-        }
+        this._send({ header, body: { code: SERVICE_NOT_FOUND, msg: `找不到服务${header.toId}` }});
     }
 
     // 注册进程服务
@@ -151,44 +171,6 @@ class MainSDK {
                 }
             }
         }
-    }
-    // 主进程发送消息
-    sendToRender(processName, eventName, params = {}) {
-        try {
-            processes[processName].webContents.send(IPC_NAME, {
-                header: {
-                    model: MAIN_IPC_NAME,
-                    eventName
-                },
-                body: params
-            });  
-        } catch (error) {
-            console.error(error);
-        }
-    }
-    // 主进程监听绑定
-    onFromRender(eventName, cb) {
-        if (!callbacks[eventName]) {
-            callbacks[eventName] = [];
-        }
-        callbacks[eventName].push(cb);
-    }
-    // 主进程监听解绑
-    removeListenerFromRender(eventName, cb) {
-        const arr = callbacks[eventName] || [];
-        for (let i = 0; i < arr.length; i++) {
-            if (arr[i] === cb) {
-                callbacks[eventName].splice(i, 1);
-                break;
-            }
-        }
-        if (callbacks[eventName] && callbacks[eventName].length) {
-            delete callbacks[eventName];
-        }
-    }
-
-    removeAllListenerFromRender(eventName) {
-        delete callbacks[eventName];
     }
 }
 
