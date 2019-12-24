@@ -121,6 +121,10 @@ class MainSDK {
         }
     }
 
+    _getSubscriberTasks() {
+        return subscriberTasks;
+    }
+
     // 发布消息
     publisher(params = {}) {
         try {

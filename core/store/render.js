@@ -1,36 +1,7 @@
-const { ipcRenderer } = require('electron');
-const { IPC_NAME, GET_STATE, SET_STATE, GET_MODULE } = require('./const');
-function send(model, data) {
-    return new Promise((resolve) => {
-        ipcRenderer.send(IPC_NAME, { model, data });
-        ipcRenderer.once(IPC_NAME, (e, data) => {
-            resolve(data);
-        });
-    });
-}
-
+/* eslint-disable no-async-promise-executor */
+const { GET_STATE, SET_STATE, GET_MODULE } = require('./const');
+const ipc = require('../ipc');
 module.exports = {
-    createStore(store, storeCenter) {
-        try {
-            for (let key in store) {
-                const item = store[key];
-                if (key === 'actions') {
-                    for (let stateKey in item) {
-                        storeCenter[stateKey] = item[stateKey];
-                    }
-                }
-
-                if (key === 'modules') {
-                    for (let moduleKey in item) {
-                        storeCenter[moduleKey] = {};
-                        this.createStore(item[moduleKey], storeCenter[moduleKey]);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    },
     setState(key, value) {
         return this._setState(key, value);
     },
@@ -40,10 +11,18 @@ module.exports = {
     getModule(moduleName) {
         return this._getModule(moduleName);
     },
+    _subscriber(eventName, cb) {
+        ipc.subscriber('main', eventName, cb);
+        return () => {
+            this._unsubscriber(eventName, cb);
+        }
+    },
+    _unsubscriber(eventName, cb) {
+        ipc.unsubscriber('main', eventName, cb);
+    },
     _setState(key, value, modules = []) {
-        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
-            const r = await send(SET_STATE, { key, value, modules });
+            const r = await ipc.request('main', SET_STATE, { key, value, modules });
             if (r) {
                 resolve(r);
             } else {
@@ -53,14 +32,19 @@ module.exports = {
     },
     _getState(key, modules = []) {
         return new Promise(async (resolve) => {
-            const r = await send(GET_STATE, { key, modules });
+            const eventName = `${modules.join('|')}|${key}`;
+            const r = {
+                subscriber: cb => this._subscriber(eventName, cb),
+                unsubscriber: cb => this._unsubscriber(eventName, cb)
+            };
+            r.value = await ipc.request('main', GET_STATE, { key, modules });
             resolve(r);
         });
     },
     _getModule(moduleName, modules = []) {
         modules.push(moduleName);
         return new Promise(async (resolve, reject) => {
-            const r = await send(GET_MODULE, { modules });
+            const r = await ipc.request('main', GET_MODULE, { modules });
             if (r) {
                 resolve({
                     setState: (key, value) => {

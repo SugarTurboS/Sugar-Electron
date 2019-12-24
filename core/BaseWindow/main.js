@@ -2,6 +2,7 @@ const { BrowserWindow } = require('electron');
 const util = require('../util');
 const ipc = require('../ipc');
 const windowCenter = require('../windowCenter');
+const Events = require('events')
 const windowEvents = [
     'closed',
     'session-end',
@@ -38,13 +39,14 @@ const windowEvents = [
 ];
 // 窗体默认属性
 const defaultOptions = {};
-class BaseWindow {
+class BaseWindow extends Events {
     // 设置所有窗口默认属性
     static setDefaultOptions(options) {
         Object.assign(defaultOptions, options);
     }
 
     constructor(name, options = {}) {
+        super();
         if (util.isBoolean(name) === false) {
             throw new Error('process name cannot be null');
         }
@@ -55,21 +57,27 @@ class BaseWindow {
         windowCenter._register(name, this);
     }
 
-    open() {
+    // 发布通知
+    publisher(eventName) {
+        ipc.publisher({ header: { fromId: this.name, eventName } });
+        this.emit(eventName);
+    }
+
+    open(option = {}) {
         try {
             if (this.instance === null) {
-                const options = Object.assign(defaultOptions, this.options);
+                const options = Object.assign(defaultOptions, this.options, option);
                 this.instance = new BrowserWindow(options);
                 // 窗口ID，必须
                 this.instance.windowId = this.name;
                 ipc._register(this.name, this.instance);
-                if (this.options.show) {
-                    ipc.publisher({ fromId: this.name, eventName: 'ready-to-show' });
+                if (options.show !== false) {
+                    this.publisher('ready-to-show');
                 }
                 windowEvents.forEach(eventName => {
                     this.instance.on(eventName, () => {
                         // 广播窗口消息
-                        ipc.publisher({ header: { fromId: this.name, eventName } });
+                        this.publisher(eventName);
                         if (eventName === 'closed') {
                             this.instance = null;
                             ipc._unregister(this.name);
@@ -77,7 +85,7 @@ class BaseWindow {
                     });
                 });
     
-                this.instance.loadURL(this.options.url);
+                this.instance.loadURL(options.url);
             }  
         } catch (error) {
             console.error(error);

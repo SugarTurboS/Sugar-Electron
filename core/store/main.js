@@ -1,33 +1,53 @@
-const { ipcMain } = require('electron');
-const { IPC_NAME, GET_STATE, SET_STATE, GET_MODULE } = require('./const');
+const { GET_STATE, SET_STATE, GET_MODULE } = require('./const');
+const ipc = require('../ipc');
 let storeCenter = {};
-ipcMain.on(IPC_NAME, (e, params = {}) => {
-    const { model, data = {} } = params;
-    const { key, value, modules = [] } = data;
+ipc.response(GET_STATE, (json = {}, cb) => {
     let retureData, cacheStore = storeCenter;
     try {
+        const { key, modules = [] } = json;
         modules.forEach(name => {
             cacheStore = cacheStore[name];
         });
-        switch(model) {
-            case GET_STATE:
-                retureData = cacheStore[key];
-                break;
-            case GET_MODULE:
-                retureData = cacheStore;
-                break;
-            case SET_STATE:
-                // eslint-disable-next-line no-cond-assign
-                if (retureData = cacheStore[key] !== undefined) {
-                    cacheStore[key] = value;
-                }
-                break;
-            default:
-        }  
+        retureData = cacheStore[key];
     } catch (error) {
         console.error(error);
     }
-    e.sender.send(IPC_NAME, retureData);
+    cb(retureData);
+});
+
+ipc.response(GET_MODULE, (json = {}, cb) => {
+    let retureData, cacheStore = storeCenter;
+    try {
+        const { modules = [] } = json;
+        modules.forEach(name => {
+            cacheStore = cacheStore[name];
+        });
+        retureData = cacheStore; 
+    } catch (error) {
+        console.error(error);
+    }
+    cb(retureData);
+});
+
+ipc.response(SET_STATE, (json = {}, cb) => {
+    let retureData, cacheStore = storeCenter;
+    try {
+        const { key, value, modules = [] } = json;
+        modules.forEach(name => {
+            cacheStore = cacheStore[name];
+        });
+        retureData = cacheStore[key] !== undefined;
+        if (retureData) {
+            if (cacheStore[key] !== value) {
+                const eventName = `${modules.join('|')}|${key}`;
+                ipc.publisher({ header: { fromId: 'main', eventName }, body: value });
+            }
+            cacheStore[key] = value;
+        } 
+    } catch (error) {
+        console.error(error);
+    }
+    cb(retureData);
 });
 
 module.exports = {

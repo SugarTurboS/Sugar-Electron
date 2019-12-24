@@ -42,7 +42,6 @@ Sugar-Electron为Electron跨平台桌面应用而生，我们希望由Sugar-Elec
 为了解决诸如此类的问题，提高Electorn应用的稳定性，我们实现了Sugar-Electron这个轻量级的框架。
 
 
-
 ## 设计原则
 
 Sugar-Electron所有的模块都基于渲染进程设计，将原有在主进程的逻辑移植到渲染进程中，原有的主进程仅充当守护进程的角色。
@@ -69,20 +68,132 @@ Sugar-Electron基于类微内核架构设计，将内部分为以下六大核心
 
 注：基础进程类与服务进程类同属于原渲染进程
 
+## 开始
+
+需求：
+1. 两个窗口winA、winB，服务进程service，程序启动是创建winA。
+1. 在winA中，点击按钮btn1创建winB。
+1. 在winB创建完成后，winA点击按钮btn2设置winB size[400, 400]。
+1. winA点击按钮btn3 向winB B1、B2发送“我是winA”的消息，winB收到消息后回复“我是winB”
+1. winA点击按钮btn4 向service service-1发送“我是winA”的消息，service收到消息后回复“service-1响应”
+
+ ```js
+// 主进程
+const { start, BaseWindow, Service } = require('Sugar-Electron');
+// 启动sugar-electron，basePath设置框架根目录
+start({ appName: 'sugar-electron', basePath: __dirname });
+// 设置窗口默认设置，详情请参考Electron BrowserWindow文档
+BaseWindow.setDefaultOptions({
+   show: false
+});
+ 
+// winA
+const winA = new BaseWindow('winA', {
+    url: `file://${__dirname}/indexA.html`
+});
+
+// winB
+const winB = new BaseWindow('winB', {
+    url: `file://${__dirname}/indexB.html`
+});
+
+// service
+const service = new Service('service', path.join(__dirname, 'app.js'));
+service.on('success', function () {
+    console.log('service进程启动成功');
+});
+service.on('fail', function () {
+    console.log('service进程启动异常');
+});
+ 
+// 创建winA窗口实例
+winA.open();
+```
+ ```js
+ // winA
+const { windowCenter } = require('Sugar-Electron');
+const btn1 = document.querySelector('#btn1');
+const btn2 = document.querySelector('#btn2');
+const btn3 = document.querySelector('#btn3');
+const btn4 = document.querySelector('#btn4');
+// 获取winB句柄
+const winB = windowCenter.winB;
+// 获取service句柄
+const service = windowCenter.service;
+btn1.onclick = async function () {
+    // 创建winB窗口实例
+    await winB.open();
+    
+    // 订阅窗口创建完成“ready-to-show”
+    const unsubscriber = winB.subscriber('ready-to-show', () => {
+        // 解绑订阅
+        unsubscriber();
+        
+        btn2.onclick = async function () {
+            // 设置winB size[400, 400]
+            const r1 = await winB.setSize(400, 400);
+            // 获取winB size[400, 400]
+            const r2 = await winB.getSize();
+            console.log(r1, r2);
+        }
+    });
+};
+
+btn3.onclick = async function () {
+    // 向winB请求B1
+    const r1 = await winB.request('B1', '我是winA');
+    console.log(r1); // B1,我是winB 
+    // 向winB请求B2
+    const r2 = await winB.request('B2', '我是winA');
+    console.log(r2); // B2,我是winB
+}
+
+btn4.onclick = async function () {
+    // 向winB请求B1
+    const r1 = await service.request('service-1', '我是winA');
+    console.log(r1); // service-1响应
+}
+```
+ ```js
+// winB
+const { ipc } = require('Sugar-Electron');
+ipc.response('B1', (json, cb) => {
+    console.log(json); // 我是winA
+    cb('B1,我是winB');
+});
+
+ipc.response('B2', (json, cb) => {
+    console.log(json); // 我是winA
+    cb('B2,我是winB');
+});
+```
+
+ ```js
+// service app.js
+const { ipc } = require('Sugar-Electron');
+ipc.response('service-1', (json, cb) => {
+    console.log(json); // 我是winA
+    cb('service-1响应');
+});
+```
+
 ## 基础进程类——BaseWindow
 
 ### 说明
 
 Sugar-Electron框架核心基础进程类，以基础进程类为载体，聚合了框架所有`核心模块`。Sugar-Electron基础进程类BaseWindow基于BrowserWindow二次封装，新增方法：
-- open() // 创建一个BrowserWindow示例，并返回
+- open // 创建一个BrowserWindow示例，并返回BrowserWindow实例
 - getInstance // 获取BrowserWindow示例，示例未创建则返回null
 
 一般情况下，基础进程类用于创建原有的渲染进程，处理窗口UI界面相关的逻辑。
 
 
 ### 示例
+需求：
+1. 创建winA实例
+1. 创建winA窗口
 
-```js
+ ```js
 // 主进程
 const { BaseWindow } = require('Sugar-Electron');
 // 设置窗口默认设置，详情请参考Electron BrowserWindow文档
@@ -90,18 +201,12 @@ BaseWindow.setDefaultOptions({
    show: false
 });
  
-// 窗口A
-const { BaseWindow } = require('../../../core');
-const NAME = 'winA';
-const OPTIONS = {
-    url: `file://${__dirname}/index.html`,
-    width: 800,
-    height: 600,
-    thickFrame: false
-}
-const winA = new BaseWindow(NAME, OPTIONS);
+// 创建winA实例
+const winA = new BaseWindow('winA', {
+    url: `file://${__dirname}/indexA.html`
+});
  
-// 创建窗口进程A
+// 创建winA窗口
 winA.open();
 ```
 
@@ -118,33 +223,32 @@ Sugar-Electron框架提供服务进程类，开发者只需要传入启动入口
 
 * 服务进程不显示界面，纯执行逻辑
 * 服务进程崩溃关闭后，可自动重启
-* 服务进程在崩溃重启后，可通过数据插件恢复现场数据
+* 服务进程在崩溃重启后，可通过进程数据共享模块复原状态
 
 ### 示例
 
 ```js
 // 主进程
-const { Service } = require('Sugar-Electron');
-const path = require('path');
-const service = {
-    start() {
-        // 创建服务进程service，服务进程启动入口app.js，要写入绝对路径
-        const service = new Service('service', path.join(__dirname, 'app.js'));
-        service.on('success', function () {
-            console.log('service进程启动成功');
-        });
-       
-        service.on('fail', function () {
-            console.log('service进程启动异常');
-        });
-         
-        return service;
-    }
-}
-// 启动
-service.start();
+// 启动service
+const service = new Service('service', path.join(__dirname, 'app.js'));
+service.on('success', function () {
+    console.log('service进程启动成功');
+});
+service.on('fail', function () {
+    console.log('service进程启动异常');
+});
 ```
+```js
+// app.js
+const { ipc } = require('Sugar-Electron');
+ipc.response('service-1', (json, cb) => {
+    cb('service-1响应');
+});
+ipc.response('service-2', (json, cb) => {
+    cb('service-2响应');
+});
 
+```
 ## 进程通信——ipc
 
 ### 说明
@@ -166,34 +270,27 @@ ipc作为Sugar-electron进程间通信核心模块，支持两种通信方式：
 #### 示例
 
 ```js
-// 渲染进程A
+// 服务进程service
 const { ipc } = require('Sugar-electron');  
 // 注册响应服务A1
-ipc.response('get:name', (json, cb) => {
-   console.log('request', json);
-   cb({ name: 'winA' });
+ipc.response('service-1', (json, cb) => {
+    console.log(json); // { name: 'winA' }
+    cb('service-1响应');
 });
 
-// 渲染进程B
-const { ipc } = require('Sugar-electron');
+```
 
-ipc.setDefaultRequestTimeout(5000); // 设置默认请求超时时间，默认20000;
-
-const r = await ipcSDK.request('winA', 'get:name', { name: 'winB'}, 10000);
-console.log('response', r);
-
-try {
-   // 向进程A发起get:name:not请求
-    await ipcSDK.request('winA', 'get:name:not');
-} catch(error) {
-    console.log('error', error);
-}
-
-// 结果
-// request { name: 'winB' }
-// reponse { name: 'winA' }
-// error { code: 2, msg: '找不到服务响应注册get:name:not' }
-
+```js
+// winA
+const { ipc, windowCenter } = require('Sugar-electron');  
+const btn1 = document.querySelector('#btn1');
+btn1.onclick = () => {
+    const r1 = await windowCenter.service.request('service-1', { name: 'winA' });
+    console.log(r1); // service-1响应
+    // 等同
+    const r2 = await ipc.request('service', 'service-1', { name: 'winA' });
+    console.log(r2); // service-1响应
+};
 ```
 #### 异常
 
@@ -212,21 +309,34 @@ Sugar-electron对响应异常做处理。
 #### 示例
 
 ```js
-// 渲染进程A
-const { ipc } = require('Sugar-electron');  
-// 发布通知
-ipc.publisher('publisher', { msg: '你好，我是winA消息'});
-
-// 渲染进程B
+// 服务进程service
 const { ipc } = require('Sugar-electron');
-// 进程B向进程A订阅消息publisher
-ipc.subscriber('winA', 'publisher', (data) => {
-    console.log('subscriber', data);
+setInterval(() => {
+    ipc.publisher('service-publisher', { name: '发布消息' });
+}, 1000);
+
+```
+
+```js
+// winA
+const { ipc, windowCenter } = require('Sugar-electron');  
+const btn1 = document.querySelector('#btn1');
+// 订阅
+const unsubscriber1 = windowCenter.service.subscriber('service-publisher', (json) => {
+    console.log(json); // { name: '发布消息' }
+});
+// 订阅
+const unsubscriber2 = ipc.subscriber('service', 'service-publisher', (json) => {
+    console.log(json); // { name: '发布消息' }
 });
 
-// 结果
-// subscriber { msg: '你好，我是winA消息'}
-
+btn1.onclick = () => {
+    // 取消订阅
+    unsubscriber1();
+    unsubscriber2();
+    // 或windowCenter.service.unsubscriber('service-publisher', cb);
+    // 或ipc.unsubscriber('service', 'service-publisher', cb);
+};
 ```
 
 注：渲染进程订阅消息队列在主进程内缓存，所以发布服务进程重启不需要重新订阅，且通过监听渲染进程关闭事件，可自动释放对应的渲染进程缓存消息队列。
@@ -236,27 +346,19 @@ Sugar-electron框架设计理念所有业务模块都有各个渲染进程完成
 
 ### 示例
 ```js
-// 渲染进程A
+// winA
 const { ipc } = require('Sugar-electron');
 // 订阅主进程消息main-send
-ipc.onFromMain('main-send', (data) => {
-    console.log('render', data);
+ipc.request('main', 'main-send', '我是渲染进程' , (data) => {
+    console.log(data); // 我是主进程
 });
-
-ipc.sendToMain('render-send', '我是渲染进程');
 
 // 主进程
 const { ipc } = require('Sugar-electron');
-// 订阅渲染进程消息render-send
-ipc.onFromRender('render-send', (data) => {
-    console.log('main', data);
+ipc.response('main-send', (data, cb) => {
+    console.log(data); // 我是渲染进程
+    cb('我是主进程')
 });
-
-ipc.sendToRender('winA', 'main-send', '我是主进程');
-
-// 结果
-// render 我是主进程
-// main 我是渲染进程
 ```
 
 ## 进程管理中心——windowCenter
@@ -270,41 +372,53 @@ sugar-electron核心模块windowCenter就是为了解决此类问题存在，保
 windowCenter默认根据根目录windowCenter自动挂载基础进程
 
 #### 示例
-例如：窗口A内打开窗口B，并在窗口B webContents初始化完成后,设置窗口B setSize(1000, 1000)。
-```js
-// 根目录windowCenter
+例如：winA内打开winB，并在winB webContents初始化完成后，设置窗口B setSize(400, 400)。
+ ```js
+// 主进程
+const { BaseWindow, Service, windowCenter } = require('Sugar-Electron');
+// 设置窗口默认设置，详情请参考Electron BrowserWindow文档
+BaseWindow.setDefaultOptions({
+   show: false
+});
+ 
 // winA
-const { BaseWindow } = require('../../../core');
-const NAME = 'winA';
-const OPTIONS = {
-    url: `file://${__dirname}/index.html`,
-    width: 800,
-    height: 600,
-    thickFrame: false
-}
-module.exports = new BaseWindow(NAME, OPTIONS);
-
-// winB
-const { BaseWindow } = require('../../../core');
-const NAME = 'winA';
-const OPTIONS = {
-    url: `file://${__dirname}/index.html`,
-    width: 800,
-    height: 600,
-    thickFrame: false
-}
-module.exports = new BaseWindow(NAME, OPTIONS);
-
-// winA-渲染进程
-const { windowCenter } = require('Sugar-electron');
-const winB = windowCenter.winB; // 获取窗口B句柄
-await winB.open(); // 打开窗口B
-// 订阅winB初始化消息
-winB.subscriber('ready-to-show', async () => {
-    await winB.setSize(1000, 1000);
-    await winB.getSize(1000, 1000); // [1000, 1000]
+const winA = new BaseWindow('winA', {
+    url: `file://${__dirname}/indexA.html`
 });
 
+// winB
+const winB = new BaseWindow('winB', {
+    url: `file://${__dirname}/indexB.html`
+});
+ 
+// 创建winA窗口实例
+windowCenter.winA.open(); // 等同于winA.open();
+```
+ ```js
+ // winA
+const { windowCenter } = require('Sugar-Electron');
+const btn1 = document.querySelector('#btn1');
+const btn2 = document.querySelector('#btn2');
+// 获取winB句柄
+const winB = windowCenter.winB;
+btn1.onclick = async function () {
+    // 创建winB窗口实例
+    await winB.open();
+    
+    // 订阅窗口创建完成“ready-to-show”
+    const unsubscriber = winB.subscriber('ready-to-show', () => {
+        // 解绑订阅
+        unsubscriber();
+        
+        btn2.onclick = async function () {
+            // 设置winB size[400, 400]
+            const r1 = await winB.setSize(400, 400);
+            // 获取winB size[400, 400]
+            const r2 = await winB.getSize();
+            console.log(r1, r2);
+        }
+    });
+};
 ```
 备注：服务进程句柄通过windowCenter也可以获取
 
@@ -318,7 +432,7 @@ Sugar-electron是多进程架构设计，在业务系统中，避免不了多个
 * 主进程申明共享状态数据
 * 渲染进程设置、获取共享状态数据
 
-store默认根据根目录store自动初始化
+注：sugar-electron默认根据根目录store自动初始化
 
 #### 示例
 
@@ -327,32 +441,41 @@ store默认根据根目录store自动初始化
 const { store } = require('Sugar-electron');
 store.createStore({
     state: {
-        name: 'store'
+        name: '我是store'
     },
     modules: {
         moduleA: {
-            name: 'moduleA'
+            state: {
+                name: '我是moduleA'
+            }
         },
         moduleB: {
-            name: 'moduleB'
+            state: {
+                name: '我是moduleB'
+            }
         }
     }
 });
  
 // 渲染进程
 const { store } = require('Sugar-electron');
-const r1 = await store.getState('name'); // store
+const r1 = await store.getState('name');
+console.log(r1.value); // 我是store
+// 订阅r1更新消息
+const unsubscriber1 = r1.subscriber((value) => {
+    console.log('更新：', value); // 更新：我是store1
+});
+await store.setState('name', '我是store1');
+unsubscriber1(); // 取消订阅，或r1.unsubscriber(cb);
  
 const moduleA = await store.getModule('moduleA');
-const r2 = await store.getState('name'); // moduleA
- 
-const is1 = await store.setState('name', 'store+1'); // true
-const r3 = await store.getState('name'); // store+1
- 
-const is2 = await store.setState('none', '没有声明的state'); 
-// Error: 找不到store state key => .none，请在主进程初始化store中声明
-```
+const r2 = await moduleA.getState('name'); // 我是moduleA
+console.log(r2.value); // 我是moduleA
 
+// Error: 找不到store state key => .none，请在主进程初始化store中声明
+await store.setState('none', '没有声明的state'); 
+
+```
 ## 配置——config
 
 ### 说明
@@ -369,18 +492,18 @@ config
 
 ![配置](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/5.png)
 
-注：AppData/appName 配置文件config.json { "env": "环境变量", "config": "配置" }
+注：
+- AppData/appName 配置文件config.json { "env": "环境变量", "config": "配置" }
+- sugar-electron默认根据根目录config自动初始化
 
 ### 示例
 
 ```js
 // 主进程
 const { config } = require('Sugar-electron');
-const path = require('path');
-const appName = 'sugar';
-const configPath = path.join(__dirname, './config');
-// appName默认''; configPath默认根目录config
-const configData = config.setOption({ appName, configPath }); 
+const { start, config } = require('Sugar-Electron');
+// 启动sugar-electron，basePath设置框架根目录
+start({ appName: 'sugar-electron', basePath: __dirname });
  
 // 渲染进程
 const { config } = require('Sugar-electron');
@@ -429,7 +552,7 @@ const apis = {
 module.exports = {
     /**
      * 安装插件，自定义插件必备
-     * @ctx [object] 框架上下文对象{ config, ipc, store }
+     * @ctx [object] 框架上下文对象{ config, ipc, store, windowCenter }
      * @params [object] 配置参数
     */
     install(ctx, params = {}) {
@@ -601,7 +724,7 @@ setState(key, value)
 /**
  * 获取state
  * @key [string] 事件名
- * @return 返回Promise对象
+ * @return 返回Promise对象 { value: '值', subscriber: '订阅更新', unsubscriber: '取消订阅'}
  */
 getState(key)
 

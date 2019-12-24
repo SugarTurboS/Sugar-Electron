@@ -162,6 +162,9 @@ module.exports = {
             });
             subscriberCb[requestId] = callback;
         }
+        return () => {
+            this.unsubscriber(toId, eventName, callback);
+        }
     },
     // 退订
     unsubscriber(toId = '', eventName, callback) {

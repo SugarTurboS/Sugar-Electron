@@ -1,10 +1,10 @@
 {
   "name": "sugar-electron",
-  "version": "1.0.2",
+  "version": "1.0.9",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "electron test/index.js"
+    "test": "jest"
   },
   "author": "Tomey",
   "license": "ISC",
