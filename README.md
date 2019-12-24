@@ -54,7 +54,7 @@ Sugar-Electron具有较高的扩展性，通过插件机制，可以讲框架的
 
 ![设计原则](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/1.png)
 
-Sugar-Electron基于类微内核架构设计，将内部分为以下六大核心模块：
+Sugar-Electron基于类微内核架构设计，将内部分为以下七大核心模块：
 
 * 基础进程类
 * 服务进程类
@@ -209,6 +209,23 @@ const winA = new BaseWindow('winA', {
 // 创建winA窗口
 winA.open();
 ```
+ ```js
+// winA
+const { windowCenter, ipc } = require('Sugar-Electron');
+const winA = windowCenter.winA;
+// 支持BrowserWindow实例所有生命周期对应事件
+winA.subscriber('ready-to-show', () => { ... });
+winA.subscriber('show', () => { ... });
+winA.subscriber('hide', () => { ... });
+winA.subscriber('focus', () => { ... });
+...
+// 支持BrowserWindow实例所有接口对应函数，但同步调用改成promise（原因是，sugar内部实现其实是通过ipc异步通信调用主进程窗口实例的函数）
+await winA.setSize();
+await winA.getSize();
+await winA.show();
+await winA.hide();
+...
+```
 
 ## 服务进程类——Service
 
@@ -346,18 +363,18 @@ Sugar-electron框架设计理念所有业务模块都有各个渲染进程完成
 
 ### 示例
 ```js
-// winA
-const { ipc } = require('Sugar-electron');
-// 订阅主进程消息main-send
-ipc.request('main', 'main-send', '我是渲染进程' , (data) => {
-    console.log(data); // 我是主进程
-});
-
 // 主进程
 const { ipc } = require('Sugar-electron');
-ipc.response('main-send', (data, cb) => {
+ipc.response('test', (data, cb) => {
     console.log(data); // 我是渲染进程
     cb('我是主进程')
+});
+
+// winA
+const { ipc } = require('Sugar-electron');
+// 请求
+ipc.request('main', 'test', '我是渲染进程' , (data) => {
+    console.log(data); // 我是主进程
 });
 ```
 
@@ -591,8 +608,9 @@ module.exports = {
 // 2、配置插件安装
 const path = require('path');
 exports.adpter = {
+    // 如果根路径plugins目录有对应的插件名，则不需要配置path或package
     path: path.join(__dirname, '../plugins/adpter'),  // 插件绝对路径
-    // package: 'adpter',  // 插件包名，如果package与path同时存在，则package优先级更高
+    package: 'adpter',  // 插件包名，如果package与path同时存在，则package优先级更高
     enable: true, // 是否启动插件
     include: ['winA'], // 插件使用范围，如果为空，则所有渲染进程安装
     params: { timeout: 20000 } // 传入插件参数
@@ -609,6 +627,15 @@ const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
 
 ## API文档
 
+```js
+/**
+ * @appName [string] 可选应用name
+ * @basePath [string] 可选sugar-electron自动初始化模块（config、store、windowCenter）根目录
+ */
+start(appName, basePath)
+
+```
+
 ### 基础进程类BaseWindow
 ```js
 /**
@@ -616,6 +643,9 @@ const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
  * @options [object] 可选 窗口配置，具体可参考electron BrowserWindow
  */
 class BaseWindow(name, options)
+实例
+- open(options) // 创建一个BrowserWindow示例，并返回BrowserWindow实例；option可选参数，覆盖BaseWindow实例窗口配置
+- getInstance() // 获取BrowserWindow示例，示例未创建则返回null
 
 ```
 
@@ -626,7 +656,9 @@ class BaseWindow(name, options)
  * @path [string] 必选 服务进程启动文件，绝对路径
  */
 class Service(name, path)
-
+实例
+- start(isDebug) // 开始服务进程，isDebug是否打开调试工具
+- stop() // 结束服务进程
 ```
 
 ### 配置config
@@ -650,7 +682,6 @@ setOption({ appName, configPath })
  * @callback [function] 回调
  */
 response(eventName, callback)
-
 
 // 渲染进程
 /**
