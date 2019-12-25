@@ -23,9 +23,10 @@ ipc.response(WINDOW_CENTER_IPC_NAME, (json = {}, cb) => {
     cb(result);
 });
 
-ipc.response(WINDOW_CENTER_GET_INFO, (json = {}, cb) => {
-    cb({ keys: windowKeys, names });
-});
+global[WINDOW_CENTER_GET_INFO] = {
+    keys: windowKeys,
+    names: names
+};
 
 const modules = {
     // 注册进程服务

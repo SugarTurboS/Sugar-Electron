@@ -1,25 +1,36 @@
-const { ipc } = require('../../../core');
+/* eslint-disable require-atomic-updates */
+const { windowCenter } = require('../../../core');
 window.onload = function () {
-    ipc.response('A1', (json, cb) => {
-        cb('winA响应请求A1:');
-        console.log(json);
+    const btn1 = document.querySelector('#btn1');
+    const btn2 = document.querySelector('#btn2');
+    const btn3 = document.querySelector('#btn3');
+    const text = document.querySelector('#text');
+    // 获取窗口B句柄
+    const winB = windowCenter.winB;
+
+    winB.subscriber('ready-to-show', () => {
+        text.innerHTML += '<p>winB初始化完毕</p>';
     });
 
-    document.querySelector('#btn1').onclick = async function () {
-        console.time();
-        const r = await ipc.request('winB', 'B1', 'winA发出一条请求B1');
-        console.timeEnd();
-        console.log('响应', r);
-    }
-
-    document.querySelector('#btn2').onclick = async function () {
-        ipc.publisher('A3', {
-            msg: '你好，我是A3消息'
-        });
-    }
-
-    ipc.subscriber('winA', 'blur', () => {
-        console.log('=====blur')
+    winB.subscriber('resize', async () => {
+        const size = await winB.getSize();
+        text.innerHTML += `<p>winB尺寸变化：${size[0]},${size[1]}</p>`;
     });
+
+    btn1.onclick = async function () {
+        await winB.open();
+    }
+
+    btn2.onclick = async function () {
+        await winB.setSize(400, 400);
+    }
+
+    btn3.onclick = async function () {
+        const r1 = await winB.request('B1', '我是winA');
+        text.innerHTML += `<p>${r1}</p>`;
+
+        const r2 = await winB.request('B2', '我是winA');
+        text.innerHTML += `<p>${r2}</p>`;
+    }
 }
 

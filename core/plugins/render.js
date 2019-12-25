@@ -4,15 +4,15 @@ const { SUGAR_OPTION } = require('../const');
 const sugarOption = remote.getGlobal(SUGAR_OPTION);
 const configPath = sugarOption.configPath;
 const util = require('../util');
+const ipc = require('../ipc');
+const store = require('../store');
+const config = require('../config');
+const windowCenter = require('../windowCenter');
 // 安装插件
 function installPlugins() {
     const pluginsJson = {};
     try {
-        const ctx = {
-            ipc: require('../ipc'),
-            store: require('../store'),
-            config: require('../config')
-        }
+        const ctx = { ipc, store, config, windowCenter };
         const threadId = util.getThreadId();
         const plugins = require(path.join(configPath, 'plugins'));
         for (let key in plugins) {

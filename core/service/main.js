@@ -13,11 +13,11 @@ class Service extends Events {
     }
 
     start(isDebug) {
+        if (this.bs) {
+            return false;
+        }
+
         try {
-            if (this.bs) {
-                this.bs.close();
-                this.bs = null;
-            }
             const URL = `file://${__dirname}/index.html`;
             this.bs = new BrowserWindow({
                 show: false,
@@ -35,11 +35,9 @@ class Service extends Events {
             this.bs.runPath = this.runPath;
 
             this.bs.on('closed', () => {
+                this.bs = null;
+                windowCenter._unegister(this.name);
                 ipc._unregister(this.name);
-                this.emit('closed');
-                setTimeout(() => {
-                    this.start();
-                }, 1000);
             });
     
             this.bs.on('ready-to-show', () => {
@@ -54,11 +52,20 @@ class Service extends Events {
                
             });
             this.bs.loadURL(URL);
+            this.bs.webContents.on('crashed', () => {
+                this.bs.reload();
+                this.emit('fail');
+            });
             windowCenter._register(this.name, this);
         } catch (error) {
             console.log(error)
             this.emit('fail');
         }
+    }
+
+    stop() {
+        this.bs.close();
+        this.bs = null;
     }
 }
 
