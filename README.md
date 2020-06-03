@@ -1,28 +1,3 @@
-Skip to content
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@SugarTeam 
-SugarTeam
-/
-Sugar-Electron
-1
-187
- Code
- Issues 0
- Pull requests 0 Actions
- Projects 0
- Wiki
- Security 0
- Insights
- Settings
-Sugar-Electron/README.md 
-Newer           Older
- 100644  772 lines (630 sloc)  22.8 KB
 # Suger-Electron
 
 [![NPM version][npm-image]][npm-url]
@@ -765,15 +740,3 @@ getModule(moduleName)
 
 ### 插件plugins
 请参考插件说明模块
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
