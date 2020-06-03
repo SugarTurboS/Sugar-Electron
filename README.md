@@ -1,3 +1,28 @@
+Skip to content
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@SugarTeam 
+SugarTeam
+/
+Sugar-Electron
+1
+187
+ Code
+ Issues 0
+ Pull requests 0 Actions
+ Projects 0
+ Wiki
+ Security 0
+ Insights
+ Settings
+Sugar-Electron/README.md 
+Newer           Older
+ 100644  772 lines (630 sloc)  22.8 KB
 # Suger-Electron
 
 [![NPM version][npm-image]][npm-url]
@@ -52,7 +77,7 @@ Sugar-Electron也借鉴了Egg.js的设计模式，提供了一套完整的开发
 
 Sugar-Electron具有较高的扩展性，通过插件机制，可以讲框架的部分能力与框架本身解耦，同时使用者也可以根据自己的业务场景定制插件组合到框架中，降低开发成本。
 
-![设计原则](https://user-gold-cdn.xitu.io/2020/6/1/1726ffa542e32e0d?w=761&h=252&f=png&s=28160)
+![设计原则](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/1.png)
 
 Sugar-Electron基于类微内核架构设计，将内部分为以下七大核心模块：
 
@@ -64,7 +89,7 @@ Sugar-Electron基于类微内核架构设计，将内部分为以下七大核心
 * 插件
 * 进程管理中心
 
-![设计原则](https://user-gold-cdn.xitu.io/2020/6/1/1726ffa6f90747c5?w=551&h=401&f=png&s=23133)
+![设计原则](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/2.png)
 
 注：基础进程类与服务进程类同属于原渲染进程
 
@@ -91,12 +116,10 @@ BaseWindow.setDefaultOptions({
 const winA = new BaseWindow('winA', {
     url: `file://${__dirname}/indexA.html`
 });
-
 // winB
 const winB = new BaseWindow('winB', {
     url: `file://${__dirname}/indexB.html`
 });
-
 // service
 const service = new Service('service', path.join(__dirname, 'app.js'));
 service.on('success', function () {
@@ -138,7 +161,6 @@ btn1.onclick = async function () {
         }
     });
 };
-
 btn3.onclick = async function () {
     // 向winB请求B1
     const r1 = await winB.request('B1', '我是winA');
@@ -147,7 +169,6 @@ btn3.onclick = async function () {
     const r2 = await winB.request('B2', '我是winA');
     console.log(r2); // B2,我是winB
 }
-
 btn4.onclick = async function () {
     // 向winB请求B1
     const r1 = await service.request('service-1', '我是winA');
@@ -161,7 +182,6 @@ ipc.response('B1', (json, cb) => {
     console.log(json); // 我是winA
     cb('B1,我是winB');
 });
-
 ipc.response('B2', (json, cb) => {
     console.log(json); // 我是winA
     cb('B2,我是winB');
@@ -264,7 +284,6 @@ ipc.response('service-1', (json, cb) => {
 ipc.response('service-2', (json, cb) => {
     cb('service-2响应');
 });
-
 ```
 ## 进程通信——ipc
 
@@ -280,9 +299,9 @@ ipc作为Sugar-electron进程间通信核心模块，支持两种通信方式：
 
 ### 请求响应
 
-![进程间通信](https://user-gold-cdn.xitu.io/2020/6/1/1726ffa85f4bd20b?w=541&h=252&f=png&s=14459)
+![进程间通信](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/3.png)
 
-![进程间通信](https://user-gold-cdn.xitu.io/2020/6/1/1726ffa9a608473f?w=751&h=701&f=png&s=53549)
+![进程间通信](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/6.png)
 
 #### 示例
 
@@ -294,7 +313,6 @@ ipc.response('service-1', (json, cb) => {
     console.log(json); // { name: 'winA' }
     cb('service-1响应');
 });
-
 ```
 
 ```js
@@ -321,7 +339,7 @@ Sugar-electron对响应异常做处理。
 
 ### 发布订阅
 
-![进程间通信](https://user-gold-cdn.xitu.io/2020/6/1/1726ffab21578a4d?w=621&h=252&f=png&s=16752)
+![进程间通信](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/4.png)
 
 #### 示例
 
@@ -331,7 +349,6 @@ const { ipc } = require('Sugar-electron');
 setInterval(() => {
     ipc.publisher('service-publisher', { name: '发布消息' });
 }, 1000);
-
 ```
 
 ```js
@@ -346,7 +363,6 @@ const unsubscriber1 = windowCenter.service.subscriber('service-publisher', (json
 const unsubscriber2 = ipc.subscriber('service', 'service-publisher', (json) => {
     console.log(json); // { name: '发布消息' }
 });
-
 btn1.onclick = () => {
     // 取消订阅
     unsubscriber1();
@@ -369,7 +385,6 @@ ipc.response('test', (data, cb) => {
     console.log(data); // 我是渲染进程
     cb('我是主进程')
 });
-
 // winA
 const { ipc } = require('Sugar-electron');
 // 请求
@@ -402,7 +417,6 @@ BaseWindow.setDefaultOptions({
 const winA = new BaseWindow('winA', {
     url: `file://${__dirname}/indexA.html`
 });
-
 // winB
 const winB = new BaseWindow('winB', {
     url: `file://${__dirname}/indexB.html`
@@ -488,10 +502,8 @@ unsubscriber1(); // 取消订阅，或r1.unsubscriber(cb);
 const moduleA = await store.getModule('moduleA');
 const r2 = await moduleA.getState('name'); // 我是moduleA
 console.log(r2.value); // 我是moduleA
-
 // Error: 找不到store state key => .none，请在主进程初始化store中声明
 await store.setState('none', '没有声明的state'); 
-
 ```
 ## 配置——config
 
@@ -507,7 +519,7 @@ config
 |- config.dev.js      // 开发配置——环境变量env=dev
 ```
 
-![配置](https://user-gold-cdn.xitu.io/2020/6/1/1726ffac72b45d7c?w=471&h=772&f=png&s=43822)
+![配置](https://raw.githubusercontent.com/SugarTeam/Sugar-Electron/master/pictures/5.png)
 
 注：
 - AppData/appName 配置文件config.json { "env": "环境变量", "config": "配置" }
@@ -525,7 +537,6 @@ start({ appName: 'sugar-electron', basePath: __dirname });
 // 渲染进程
 const { config } = require('Sugar-electron');
 console.log(config);
-
 ```
 
 ## 插件——plugins
@@ -565,7 +576,6 @@ const apis = {
         method: 'POST'
     }
 }
-
 module.exports = {
     /**
      * 安装插件，自定义插件必备
@@ -591,7 +601,6 @@ module.exports = {
                         // 通过进程间通信模块，告知主进程退出登录
                         ctx.ipc.sendToMain('LOGOUT');
                     }
-
                     return res;
                 } catch (error) {
                     throw error;
@@ -633,7 +642,6 @@ const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
  * @basePath [string] 可选sugar-electron自动初始化模块（config、store、windowCenter）根目录
  */
 start(appName, basePath)
-
 ```
 
 ### 基础进程类BaseWindow
@@ -646,7 +654,6 @@ class BaseWindow(name, options)
 实例
 - open(options) // 创建一个BrowserWindow示例，并返回BrowserWindow实例；option可选参数，覆盖BaseWindow实例窗口配置
 - getInstance() // 获取BrowserWindow示例，示例未创建则返回null
-
 ```
 
 ### 服务进程类Service
@@ -669,27 +676,23 @@ class Service(name, path)
  * configPath [string] 配置目录路径，默认根目录config
  */
 setOption({ appName, configPath })
-
 ```
 
 ### 进程间通信ipc
 ```js
 // 主进程
-
 /**
  * 响应，主进程名`main`，渲染进程通过ipc.request('main', eventName)请求主进程服务
  * @eventName [string] 事件名  
  * @callback [function] 回调
  */
 response(eventName, callback)
-
 // 渲染进程
 /**
  * 设置响应超时时间
  * @timeout [number] 时间毫秒
  */
 setDefaultRequestTimeout(timeout)
-
 /**
  * 请求
  * @toId [string] 进程ID（注册通信进程模块名） 
@@ -699,21 +702,18 @@ setDefaultRequestTimeout(timeout)
  * @return 返回Promise对象
  */
 request(toId, eventName, data, timeout)
-
 /**
  * 响应
  * @eventName [string] 事件名  
  * @callback [function] 回调
  */
 response(eventName, callback)
-
 /**
  * 发布
  * @eventName [string] 事件名  
  * @params 参数
  */
 publisher(eventName, params)
-
 /**
  * 订阅
  * @toId [string] 进程ID（注册通信进程模块名） 
@@ -721,7 +721,6 @@ publisher(eventName, params)
  * @callback [function] 回调
  */
 subscriber(toId, eventName, callback)
-
 /**
  * 取消订阅
  * @toId [string] 进程ID（注册通信进程模块名） 
@@ -729,7 +728,6 @@ subscriber(toId, eventName, callback)
  * @callback [function] 回调
  */
 unsubscribe(toId, eventName, callback)
-
 ```
 ### 进程管理中心windowCenter
 在主进程、渲染进程获取进程句柄，例如窗口A windowCenter['winA'];
@@ -742,7 +740,6 @@ unsubscribe(toId, eventName, callback)
  * @createStore [object] 初始化state
  */
 createStore({ appName, configPath })
-
 // 渲染进程
 /**
  * 设置state
@@ -751,14 +748,12 @@ createStore({ appName, configPath })
  * @return 返回Promise对象
  */
 setState(key, value)
-
 /**
  * 获取state
  * @key [string] 事件名
  * @return 返回Promise对象 { value: '值', subscriber: '订阅更新', unsubscriber: '取消订阅'}
  */
 getState(key)
-
 /**
  * 获取module
  * @moduleName [string] 模块名
@@ -770,3 +765,15 @@ getModule(moduleName)
 
 ### 插件plugins
 请参考插件说明模块
+© 2020 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
