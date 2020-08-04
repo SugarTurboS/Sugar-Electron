@@ -1,4 +1,4 @@
-const axios = require('axios');
+// const axios = require('axios');
 const apis = {
     FETCH_DATA_1: {
         url: '/XXXXXXX1',

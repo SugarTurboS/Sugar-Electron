@@ -1,65 +1,62 @@
 /* eslint-disable no-async-promise-executor */
-const { GET_STATE, SET_STATE, GET_MODULE } = require('./const');
-const ipc = require('../ipc');
+const { remote } = require('electron');
+const { STORE, SET_STATE, STATE_CHANGE } = require('./const');
+const ipc = require('../ipc/render');
+
 module.exports = {
-    setState(key, value) {
-        return this._setState(key, value);
-    },
-    getState(key) {
-        return this._getState(key);
-    },
-    getModule(moduleName) {
-        return this._getModule(moduleName);
-    },
-    _subscriber(eventName, cb) {
-        ipc.subscriber('main', eventName, cb);
-        return () => {
-            this._unsubscriber(eventName, cb);
+    state: remote.getGlobal(STORE),
+    setState() {
+        let type, key, value, state, modules;
+        if (typeof arguments[0] === 'object') {
+            type = 0;
+            state = arguments[0];
+            modules = arguments[1];
+        } else {
+            type = 1;
+            key = arguments[0];
+            value = arguments[1];
+            modules = arguments[2];
         }
-    },
-    _unsubscriber(eventName, cb) {
-        ipc.unsubscriber('main', eventName, cb);
-    },
-    _setState(key, value, modules = []) {
         return new Promise(async (resolve, reject) => {
-            const r = await ipc.request('main', SET_STATE, { key, value, modules });
+            const r = await ipc.request('main', SET_STATE, { type, key, value, state, modules });
             if (r) {
                 resolve(r);
             } else {
-                reject(new Error(`找不到store state key => ${modules.join('.')}.${key}，请在主进程初始化store中声明`));
+                reject(new Error(`找不到store state key => ${modules.join('.')}，请在主进程初始化store中声明`));
             }
         });
     },
-    _getState(key, modules = []) {
-        return new Promise(async (resolve) => {
-            const eventName = `${modules.join('|')}|${key}`;
-            const r = {
-                subscriber: cb => this._subscriber(eventName, cb),
-                unsubscriber: cb => this._unsubscriber(eventName, cb)
-            };
-            r.value = await ipc.request('main', GET_STATE, { key, modules });
-            resolve(r);
+    getModules(modules = []) {
+        const obj = {};
+        const key = `${STORE}${modules.join('|')}keys`;
+        const keys = remote.getGlobal(key) || [];
+        keys.forEach(key => {
+            obj[key] = this.getModule(key, modules);
         });
+        return obj;
     },
-    _getModule(moduleName, modules = []) {
-        modules.push(moduleName);
-        return new Promise(async (resolve, reject) => {
-            const r = await ipc.request('main', GET_MODULE, { modules });
-            if (r) {
-                resolve({
-                    setState: (key, value) => {
-                        return this._setState(key, value, modules);
-                    },
-                    getModule: (moduleName) => {
-                        return this._getModule(moduleName, modules);
-                    },
-                    getState: (key) => {
-                        return this._getState(key, modules);
-                    }
-                });
-            } else {
-                reject(new Error(`找不到store Modules => ${modules.join('.')}.${moduleName}，请在主进程初始化store中声明`));
-            }
-        });
+    subscribe(cb, modules = []) {
+        const eventName = `${STATE_CHANGE}${modules.join('|')}`;
+        ipc.subscribe('main', eventName, cb);
+        return () => {
+            this.unsubscribe(cb, modules);
+        }
+    },
+    unsubscribe(cb, modules = []) {
+        const eventName = `${STATE_CHANGE}${modules.join('|')}`;
+        ipc.unsubscribe('main', eventName, cb);
+    },
+    getModule(moduleName, modules = []) {
+        const key = `${STORE}${modules.concat([moduleName]).join('|')}`;
+        const _modules = modules.concat([moduleName]);
+        const self = this;
+        return {
+            state: remote.getGlobal(key),
+            getModule: moduleName => this.getModule(moduleName, _modules),
+            setState: function () { return self.setState(...arguments, _modules); },
+            subscribe: cb => this.subscribe(cb, _modules),
+            unsubscribe: cb => this.unsubscribe(cb, _modules),
+            getModules: () => this.getModules(_modules)
+        }
     }
 };

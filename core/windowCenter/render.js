@@ -1,8 +1,8 @@
 const remote = require('electron').remote;
-const ipc = require('../ipc');
+const ipc = require('../ipc/render');
 const { WINDOW_CENTER_IPC_NAME, WINDOW_CENTER_GET_INFO } = require('./const');
 const modules = {};
-const ipcKeys = ['request', 'subscriber', 'unsubscriber'];
+const ipcKeys = ['request', 'subscribe', 'unsubscribe'];
 async function actionWindow (windowName, action = '', args) {
     return await ipc.request('main', WINDOW_CENTER_IPC_NAME, {
         windowName, action, args

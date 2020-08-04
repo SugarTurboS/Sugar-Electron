@@ -19,8 +19,9 @@ app.on('ready', function () {
    BaseWindow.setDefaultOptions(defaultState);
   
    const service = require('./services/service');
-   service.start(false);
-
+   service.start(true);
    const { winA } = windowCenter;
    winA.open();
 });
+
+

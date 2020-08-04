@@ -1,6 +1,6 @@
 
 const { BrowserWindow } = require('electron');
-const ipc = require('../ipc');
+const ipc = require('../ipc/main');
 const { WINDOW_CENTER_IPC_NAME, WINDOW_CENTER_GET_INFO } = require('./const');
 const names = [];
 const windowKeys = ['open']; 

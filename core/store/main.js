@@ -1,78 +1,55 @@
-const { GET_STATE, SET_STATE, GET_MODULE } = require('./const');
-const ipc = require('../ipc');
-let storeCenter = {};
-ipc.response(GET_STATE, (json = {}, cb) => {
-    let retureData, cacheStore = storeCenter;
-    try {
-        const { key, modules = [] } = json;
-        modules.forEach(name => {
-            cacheStore = cacheStore[name];
-        });
-        retureData = cacheStore[key];
-    } catch (error) {
-        console.error(error);
-    }
-    cb(retureData);
-});
-
-ipc.response(GET_MODULE, (json = {}, cb) => {
-    let retureData, cacheStore = storeCenter;
-    try {
-        const { modules = [] } = json;
-        modules.forEach(name => {
-            cacheStore = cacheStore[name];
-        });
-        retureData = cacheStore; 
-    } catch (error) {
-        console.error(error);
-    }
-    cb(retureData);
-});
+const { STORE, SET_STATE, STATE_CHANGE } = require('./const');
+const ipc = require('../ipc/main');
 
 ipc.response(SET_STATE, (json = {}, cb) => {
-    let retureData, cacheStore = storeCenter;
+    const { type, key, value, state = {}, modules = [] } = json;
     try {
-        const { key, value, modules = [] } = json;
-        modules.forEach(name => {
-            cacheStore = cacheStore[name];
-        });
-        retureData = cacheStore[key] !== undefined;
-        if (retureData) {
-            if (cacheStore[key] !== value) {
-                const eventName = `${modules.join('|')}|${key}`;
-                ipc.publisher({ header: { fromId: 'main', eventName }, body: value });
-            }
-            cacheStore[key] = value;
-        } 
+        const moduleKey = `${STORE}${modules.join('|')}`;
+        const eventName = `${STATE_CHANGE}${modules.join('|')}`;
+        let body = {};
+        if (type === 0) {
+            Object.assign(global[moduleKey], state);
+            body = state;
+        } else {
+            global[moduleKey][key] = value;
+            body[key] = value;
+        }
+        ipc.publisher({ header: { fromId: 'main', eventName }, body });
     } catch (error) {
         console.error(error);
     }
-    cb(retureData);
+    cb(true);
 });
 
-module.exports = {
-    _initStore(store, storeCenter) {
-        try {
-            for (let key in store) {
-                const item = store[key];
-                if (key === 'state') {
-                    for (let stateKey in item) {
-                        storeCenter[stateKey] = item[stateKey];
+function initStore(store, modules = []) {
+    try {
+        for (let key in store) {
+            const item = store[key];
+            switch (key) {
+                case 'state':
+                    var keyState = `${STORE}${modules.join('|')}`;
+                    global[keyState] = item;
+                    break;
+                case 'modules':
+                    var keyModules = `${STORE}${modules.join('|')}keys`;
+                    if (!global[keyModules]) {
+                        global[keyModules] = []
                     }
-                }
-    
-                if (key === 'modules') {
                     for (let moduleKey in item) {
-                        storeCenter[moduleKey] = {};
-                        this._initStore(item[moduleKey], storeCenter[moduleKey]);
+                        global[keyModules].push(moduleKey);
+                        initStore(item[moduleKey], modules.concat([moduleKey]));
                     }
-                }
+                    break;
+                default:
             }
-        } catch (error) {
-            console.error(error);
         }
-    },
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+module.exports = {
     createStore(store = {}) {
-        this._initStore(store, storeCenter);
+        initStore(store);
     }
 };

@@ -8,11 +8,12 @@ const {
     SUBSCRIBER,
     UNSUBSCRIBER,
     IPC_NAME,
-    REQUEST_REPONSE
+    REQUEST,
+    REPONSE
 } = require('./const');
 const requestCb = {};
 const requestHandler = {};
-const subscriberCb = {};
+const subscribeCb = {};
 let defaultRequestTimeout = 20000; // 请求响应超时，默认值
 // 发送消息
 function send(json = {}) {
@@ -26,16 +27,14 @@ ipcRenderer.on(IPC_NAME, function (e, params = {}) {
         const { model, eventName, requestId, toId, fromId } = header;
         switch (model) {
             // 请求、响应类型
-            case REQUEST_REPONSE:
-                if (requestCb[requestId]) {  //发起的调用请求响应了
-                    requestCb[requestId](params);
-                } else if (requestHandler[eventName]) {  //收到了调用请求
+            case REQUEST:
+                if (requestHandler[eventName]) {  //收到了调用请求
                     requestHandler[eventName](params);
                 } else {
                     // 找不到注册服务则原路返回null
                     send({
                         header: {
-                            model: REQUEST_REPONSE,
+                            model: REPONSE,
                             fromId: toId,
                             toId: fromId,
                             eventName,
@@ -48,8 +47,11 @@ ipcRenderer.on(IPC_NAME, function (e, params = {}) {
                     });
                 }
                 break;
+            case REPONSE:
+                requestCb[requestId] && requestCb[requestId](params);
+                break;
             case SUBSCRIBER:
-                subscriberCb[requestId] && subscriberCb[requestId](body);
+                subscribeCb[requestId] && subscribeCb[requestId](body);
                 break;
             default:
         }
@@ -68,7 +70,7 @@ module.exports = {
         const threadId = util.getThreadId();
         return new Promise(function (resolve, reject) {
             if (!threadId) {
-                reject();
+                return reject();
             }
             try {
                 let timeoutFlag;
@@ -90,7 +92,7 @@ module.exports = {
                 requestCb[requestId] = cb;
                 send({
                     header: {
-                        model: REQUEST_REPONSE,
+                        model: REQUEST,
                         fromId: threadId,
                         toId,
                         eventName,
@@ -111,7 +113,7 @@ module.exports = {
                 return function (result) {
                     send({
                         header: {
-                            model: REQUEST_REPONSE,
+                            model: REPONSE,
                             fromId: header.toId,
                             toId: header.fromId,
                             eventName,
@@ -132,6 +134,9 @@ module.exports = {
             console.error(error);
         }
     },
+    unresponse(eventName) {
+        delete requestHandler[eventName];
+    },
     // 发布消息
     publisher(eventName = '', params = {}) {
         const threadId = util.getThreadId();
@@ -147,7 +152,7 @@ module.exports = {
         }
     },
     // 订阅消息
-    subscriber(toId = '', eventName = '', callback = () => {}) {
+    subscribe(toId = '', eventName = '', callback = () => {}) {
         const requestId = util.createUUID();
         const threadId = util.getThreadId();
         if (threadId) {
@@ -160,18 +165,18 @@ module.exports = {
                     requestId
                 }
             });
-            subscriberCb[requestId] = callback;
+            subscribeCb[requestId] = callback;
         }
         return () => {
-            this.unsubscriber(toId, eventName, callback);
+            this.unsubscribe(toId, eventName, callback);
         }
     },
     // 退订
-    unsubscriber(toId = '', eventName, callback) {
+    unsubscribe(toId = '', eventName, callback) {
         const threadId = util.getThreadId();
         if (threadId) {
-            for (let requestId in subscriberCb) {
-                if (subscriberCb[requestId] === callback) {
+            for (let requestId in subscribeCb) {
+                if (subscribeCb[requestId] === callback) {
                     send({
                         header: {
                             model: UNSUBSCRIBER,
@@ -181,7 +186,7 @@ module.exports = {
                             requestId
                         }
                     });
-                    delete subscriberCb[requestId];
+                    delete subscribeCb[requestId];
                 }
             }
         }

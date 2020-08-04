@@ -1,4 +1,4 @@
-const { ipc } = require('../../../core');
+const { ipc, plugins, store, config } = require('../../../core');
 ipc.response('service-1', (json, cb) => {
     cb('service-1响应');
 });

@@ -24,7 +24,7 @@ module.exports = {
         return windowId;
     },
     isBoolean(value) {
-        return !!value
+        return !!value;
     },
     isObject(value) {
         return Object.prototype.toString.call(value) === '[object Object]';

@@ -7,6 +7,10 @@ const OPTIONS = {
     height: 600,
     thickFrame: false
 }
-module.exports = new BaseWindow(NAME, OPTIONS);
+const baseWindow = new BaseWindow(NAME, OPTIONS);
+baseWindow.on('ready-to-show', () => {
+    baseWindow.getInstance().webContents.openDevTools();
+});
+module.exports = baseWindow;
 
 

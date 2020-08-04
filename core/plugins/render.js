@@ -4,34 +4,36 @@ const { SUGAR_OPTION } = require('../const');
 const sugarOption = remote.getGlobal(SUGAR_OPTION);
 const configPath = sugarOption.configPath;
 const util = require('../util');
-const ipc = require('../ipc');
-const store = require('../store');
-const config = require('../config');
-const windowCenter = require('../windowCenter');
+const ipc = require('../ipc/render');
+const store = require('../store/render');
+const config = require('../config/render');
+const windowCenter = require('../windowCenter/render');
 // 安装插件
 function installPlugins() {
-    const pluginsJson = {};
+    const plugins = {};
     try {
-        const ctx = { ipc, store, config, windowCenter };
+        const ctx = { ipc, store, config, windowCenter, plugins };
         const threadId = util.getThreadId();
-        const plugins = require(path.join(configPath, 'plugins'));
-        for (let key in plugins) {
-            const item = plugins[key];
+        const pluginsConfig = require(path.join(configPath, 'plugins'));
+        for (let key in pluginsConfig) {
+            let item = pluginsConfig[key] || {};
+            if (typeof item === 'function') {
+                item = item(sugarOption);
+            }
             const { include, enable, package, params } = item;
             const isInclude = !util.isArray(include) || include.length === 0 || include.indexOf(threadId) > -1;
             if (isInclude && enable) {
                 const pluginPath = package || item.path || path.join(getDefaultPath(), key);
-                pluginsJson[key] = require(pluginPath).install(ctx, params);
+                plugins[key] = require(pluginPath).install(ctx, params);
             }
         }
     } catch (error) {
-        console.error(error);
     }
-    return pluginsJson;
+    return plugins;
 }
 
 function getDefaultPath() {
-    return path.join(sugarOption.basePath, 'plugins')
+    return sugarOption.pluginsPath || path.join(sugarOption.basePath, 'plugins')
 }
 
 

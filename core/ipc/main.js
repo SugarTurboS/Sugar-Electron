@@ -1,7 +1,7 @@
 const { ipcMain } = require('electron');
-const { SERVICE_NOT_FOUND, RESPONSE_OK, REQUEST_REPONSE, PUBLISHER, SUBSCRIBER, UNSUBSCRIBER, IPC_NAME } = require('./const');
+const { SERVICE_NOT_FOUND, RESPONSE_OK, REQUEST, REPONSE, PUBLISHER, SUBSCRIBER, UNSUBSCRIBER, IPC_NAME } = require('./const');
 const processes = {}; // 进程模块合集
-const subscriberTasks = {}; // 缓存进程订阅任务
+const subscribeTasks = {}; // 缓存进程订阅任务
 const responseCallbacks = {};
 class MainSDK {
     constructor() {
@@ -11,15 +11,16 @@ class MainSDK {
                 const { model } = header;
                 switch (model) {
                     // 请求、响应
-                    case REQUEST_REPONSE:
+                    case REQUEST:
+                    case REPONSE:
                         this._requestResponseMessageForwarding(params);
                         break;
                     // 订阅
                     case SUBSCRIBER:
-                        this._subscriber(params);
+                        this._subscribe(params);
                         break;
                     case UNSUBSCRIBER:
-                        this._unsubscriber(params);
+                        this._unsubscribe(params);
                         break;
                     // 发布
                     case PUBLISHER:
@@ -58,6 +59,7 @@ class MainSDK {
         try {
             const createCb = (header) => {
                 return (result) => {
+                    header.model = REPONSE;
                     this._send({ header, body: { code: RESPONSE_OK, data: result }});
                 }
             }
@@ -74,7 +76,7 @@ class MainSDK {
         try {
             const { header = {}, body } = params;
             const { fromId, toId } = header;
-            processes[fromId].webContents.send(IPC_NAME, {
+            processes[fromId] && processes[fromId].webContents.send(IPC_NAME, {
                 header: Object.assign(header, {
                     fromId: toId,
                     toId: fromId
@@ -87,31 +89,31 @@ class MainSDK {
     }
 
     // 订阅消息
-    _subscriber(params = {}) {
+    _subscribe(params = {}) {
         const { fromId, toId, eventName } = params.header;
         // 初始化
-        if (!subscriberTasks[toId]) {
-            subscriberTasks[toId] = {};
-            subscriberTasks[toId][fromId] = {};
-            subscriberTasks[toId][fromId][eventName] = [];
-        } else if (!subscriberTasks[toId][fromId]) {
-            subscriberTasks[toId][fromId] = {};
-            subscriberTasks[toId][fromId][eventName] = [];
-        } else if (!subscriberTasks[toId][fromId][eventName]) {
-            subscriberTasks[toId][fromId][eventName] = [];
+        if (!subscribeTasks[toId]) {
+            subscribeTasks[toId] = {};
+            subscribeTasks[toId][fromId] = {};
+            subscribeTasks[toId][fromId][eventName] = [];
+        } else if (!subscribeTasks[toId][fromId]) {
+            subscribeTasks[toId][fromId] = {};
+            subscribeTasks[toId][fromId][eventName] = [];
+        } else if (!subscribeTasks[toId][fromId][eventName]) {
+            subscribeTasks[toId][fromId][eventName] = [];
         }
-        subscriberTasks[toId][fromId][eventName].push(params);
+        subscribeTasks[toId][fromId][eventName].push(params);
     }
 
     // 退订消息
-    _unsubscriber(params = {}) {
+    _unsubscribe(params = {}) {
         try {
             const { fromId, toId, eventName, requestId } = params.header;
-            if (subscriberTasks[toId][fromId][eventName]) {
-                const length = subscriberTasks[toId][fromId][eventName].length;
+            if (subscribeTasks[toId][fromId][eventName]) {
+                const length = subscribeTasks[toId][fromId][eventName].length;
                 for (let i = 0; i < length; i++) {
-                    if (subscriberTasks[toId][fromId][eventName][i].header.requestId === requestId) {
-                        subscriberTasks[toId][fromId][eventName].splice(i, 1);
+                    if (subscribeTasks[toId][fromId][eventName][i].header.requestId === requestId) {
+                        subscribeTasks[toId][fromId][eventName].splice(i, 1);
                         break;
                     }
                 }
@@ -122,15 +124,15 @@ class MainSDK {
     }
 
     _getSubscriberTasks() {
-        return subscriberTasks;
+        return subscribeTasks;
     }
 
     // 发布消息
     publisher(params = {}) {
         try {
             const { fromId, eventName } = params.header;
-            for (let fromKey in subscriberTasks[fromId]) {
-                const arr = subscriberTasks[fromId][fromKey][eventName];
+            for (let fromKey in subscribeTasks[fromId]) {
+                const arr = subscribeTasks[fromId][fromKey][eventName];
                 if (arr) {
                     arr.forEach((item = {}) => {
                         const { fromId } = item.header;
@@ -155,6 +157,7 @@ class MainSDK {
 
     // 找不到服务
     _responseNoSerice(header = {}) {
+        header.model = REPONSE;
         this._send({ header, body: { code: SERVICE_NOT_FOUND, msg: `找不到服务${header.toId}` }});
     }
 
@@ -166,11 +169,11 @@ class MainSDK {
     _unregister(name) {
         delete processes[name];
          // 删除进程所有订阅消息
-        for (let toKey in subscriberTasks) {
-            if (subscriberTasks[toKey]) {
-                for (let fromKey in subscriberTasks[toKey]) {
+        for (let toKey in subscribeTasks) {
+            if (subscribeTasks[toKey]) {
+                for (let fromKey in subscribeTasks[toKey]) {
                     if (fromKey === name) {
-                        delete subscriberTasks[toKey][fromKey];
+                        delete subscribeTasks[toKey][fromKey];
                     }
                 }
             }

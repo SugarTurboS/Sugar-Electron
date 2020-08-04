@@ -1,6 +1,6 @@
 {
   "name": "sugar-electron",
-  "version": "1.0.9",
+  "version": "1.0.38",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,9 +8,9 @@
   },
   "author": "Tomey",
   "license": "ISC",
-  "homepage": "https://github.com/SugarTeam/Sugar-Electron",
+  "homepage": "https://github.com/SugarTurboS/Sugar-Electron",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SugarTeam/Sugar-Electron.git"
+    "url": "https://github.com/SugarTurboS/Sugar-Electron.git"
   }
 }
