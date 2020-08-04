@@ -6,9 +6,9 @@ const DEFAULT_PATH = path.join(process.cwd(), 'config');
 const APP_DATA = path.join(os.homedir(), '/AppData/Roaming');
 const { SUGAR_OPTION, CONFIG_GET } = require('../const');
 global[SUGAR_OPTION].configPath = DEFAULT_PATH;
-let config = null;
+const config = {};
+let hasInit = false;
 let appName = '';
-
 // 获取环境变量参数
 function getProcessArgv() {
     const argv = {};
@@ -57,29 +57,33 @@ function getLocalConfig(configPath, env) {
 }
 
 const getConfig = global[CONFIG_GET] = function () {
-    if (config === null) {
+    if (hasInit === false) {
         const appData = getConfigFromAppData(appName);
         const argv = getProcessArgv();
         const env = appData.env || argv.env || '';
         const baseLocalConfig = getLocalBaseConfig(global[SUGAR_OPTION].configPath);
         const localConfig = getLocalConfig(global[SUGAR_OPTION].configPath, env);
-        config = Object.assign({ argv }, baseLocalConfig, localConfig, appData.config);
+        Object.assign(config, { argv }, baseLocalConfig, localConfig, appData.config);
+        hasInit = true;
     }
     return config;
 }
 
-module.exports = {
-    getConfig,
-    /**
-     * 设置参数
-     * @param {object} params
-     * option.appName 应用名
-     * option.configPath 默认配置目录路径，如果不传则自动加载根目录config目录 
-     * */
-    setOption(params = {}) {
-        appName = params.appName || '';
-        global[SUGAR_OPTION].configPath = params.configPath;
-        return getConfig();
-    }
-};
+/**
+ * 设置参数
+ * @param {object} params
+ * option.appName 应用名
+ * option.configPath 默认配置目录路径，如果不传则自动加载根目录config目录 
+ * */
+const setOption = function(params = {}) {
+    appName = params.appName || '';
+    global[SUGAR_OPTION].configPath = params.configPath;
+    return getConfig();
+}
+
+config.getConfig = getConfig;
+config.setOption = setOption;
+
+module.exports = config;
+
 

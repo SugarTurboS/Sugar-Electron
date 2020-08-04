@@ -1,8 +1,9 @@
+/* eslint-disable no-undef */
 const { BrowserWindow } = require('electron');
 const ipc = require('../ipc');
 const Events = require('events');
 const path = require('path');
-const windowCenter = require('../windowCenter');
+const windowCenter = require('../windowCenter/main');
 class Service extends Events {
     constructor(name, runPath, isDebug = false) {
         super();
@@ -35,6 +36,7 @@ class Service extends Events {
             this.bs.runPath = this.runPath;
 
             this.bs.on('closed', () => {
+                this.emit('closed');
                 this.bs = null;
                 windowCenter._unegister(this.name);
                 ipc._unregister(this.name);
@@ -49,12 +51,10 @@ class Service extends Events {
                     this.bs.setIgnoreMouseEvents(true);
                 }
                 this.emit('success');
-               
             });
             this.bs.loadURL(URL);
             this.bs.webContents.on('crashed', () => {
-                this.bs.reload();
-                this.emit('fail');
+                this.emit('crashed');
             });
             windowCenter._register(this.name, this);
         } catch (error) {

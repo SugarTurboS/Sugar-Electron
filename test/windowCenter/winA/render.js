@@ -8,11 +8,11 @@ window.onload = function () {
     // 获取窗口B句柄
     const winB = windowCenter.winB;
 
-    winB.subscriber('ready-to-show', () => {
+    winB.subscribe('ready-to-show', () => {
         text.innerHTML += '<p>winB初始化完毕</p>';
     });
 
-    winB.subscriber('resize', async () => {
+    winB.subscribe('resize', async () => {
         const size = await winB.getSize();
         text.innerHTML += `<p>winB尺寸变化：${size[0]},${size[1]}</p>`;
     });

@@ -43,7 +43,7 @@ callback: 回调函数
 eventName: 消息名
 params: 消息参数
 
-#### 订阅：subscriber(toId:String, eventName:String, callback:Function)
+#### 订阅：subscribe(toId:String, eventName:String, callback:Function)
 toId: 订阅消息进程ID（注册通信进程模块名）
 eventName: 消息名
 callback: 回调函数
