@@ -14,9 +14,11 @@ app.on('ready', function () {
       appName,
       basePath: __dirname
    });
+
+   console.log(BaseWindow)
    
    // 设置窗口默认设置
-   BaseWindow.setDefaultOptions(defaultState);
+   BaseWindow.setDefaultOption(defaultState);
   
    const service = require('./services/service');
    service.start(true);
