@@ -15,37 +15,44 @@ module.exports = {
      * @param option.pluginsPath [string] 插件目录
     */
     start(option = {}) {
-        try {
-            const { appName, basePath, configPath, storePath, windowCenterPath } = option;
-            global[SUGAR_OPTION] = option;
-            if (basePath) {
-                try {
-                    // 自动初始化config 
+        const { appName, basePath, configPath, storePath, windowCenterPath } = option;
+        global[SUGAR_OPTION] = option;
+        if (basePath) {
+            try {
+                // 自动初始化config
+                const _configPath = configPath || path.join(basePath, '/config');
+                if (fs.existsSync(_configPath)) {
                     config.setOption({
                         appName,
-                        configPath: configPath || path.join(basePath, '/config')
+                        configPath: _configPath
                     });
-                // eslint-disable-next-line no-empty
-                } catch (e) {}
-
-                try {
-                    // 自动初始化store
-                    const storeJson = require(storePath || path.join(basePath, '/store'))
+                }
+            } catch (error) {
+                console.log(error);        
+            }
+          
+            try {
+                // 自动初始化store
+                const _storePath = storePath || path.join(basePath, '/store');
+                if (fs.existsSync(_storePath)) {
+                    const storeJson = require(_storePath)
                     store.createStore(storeJson);
-                // eslint-disable-next-line no-empty
-                } catch (e) {}
+                } 
+            } catch (error) {
+                console.log(error);    
+            }
 
-                try {
-                    // 自动初始化windowCenter
-                    const _windowCenterPath = windowCenterPath || path.join(basePath, '/windowCenter');
+            try {
+                // 自动初始化windowCenter
+                const _windowCenterPath = windowCenterPath || path.join(basePath, '/windowCenter');
+                if (fs.existsSync(_windowCenterPath)) {
                     const items = fs.readdirSync(_windowCenterPath);
                     const dirs = items.filter(item => fs.statSync(path.join(_windowCenterPath, item)).isDirectory());
                     dirs.forEach(item => require(path.join(_windowCenterPath, item)));  
-                // eslint-disable-next-line no-empty
-                } catch (e) {}
-            }   
-        } catch (error) {
-            console.error(error);
-        }
+                }  
+            } catch (error) {
+                console.log(error);    
+            }
+        }   
     }
 };

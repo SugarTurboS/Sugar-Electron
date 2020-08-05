@@ -31,12 +31,20 @@ npm i sugar-electron-cli -g
 sugar-electron-cli init
 ```
 
-### 前言
-今天给大家带来一款基于Electron桌面开发平台应用框架sugar-electron，期望能改善Electron应用稳定性和帮助开发团队降低开发和维护成本。
+## 前言
+今天给大家带来一款基于Electron桌面开发平台的自研应用框架Sugar-Electron，期望能改善Electron应用稳定性和帮助开发团队降低开发和维护成本。
 
-笔者使用Electron做桌面应用，已经有3年的时间，期间也遇到很多大大小小的坑。==总结一下，最大的问题还是应用稳定性和开发效率低问题。==
+笔者使用Electron做桌面应用，已经有3年的时间，期间也遇到很多大大小小的坑。但总结起来，最大的问题还是应用稳定性和开发效率问题。我们期望通过这个框架，能让应用程序在这两个方面有所优化。
 
-#### 关于应用稳定性低
+项目源码地址：
+[https://github.com/SugarTurboS/Sugar-Electron](https://github.com/SugarTurboS/Sugar-Electron)
+
+如有任何疑问，可以扫码加入微信群聊讨论
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200805154200308.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0ZvcmV2ZXJDamw=,size_16,color_FFFFFF,t_70)
+
+
+## 关于应用稳定性
 
 我们知道Electron应用程序有三大基础模块。
 - 主进程
@@ -49,30 +57,31 @@ sugar-electron-cli init
 - 主进程出现未捕获的异常崩溃，直接导致应用退出。
 - 主进程出现阻塞，直接导致全部渲染进程阻塞，UI处于阻塞无响应状态。
 
-#### 关于开发效率低
+所以，在Sugar-Electron中，我们引入了Service进程的概念，期望将业务原来写在主进程的代码，迁移到Service进程中（本质上是渲染进程），使得这些代码导致的崩溃不会使得整个程序退出。而主进程的进程管理器可以在Service崩溃时，重启该进程并恢复崩溃前的状态，从而提高整个程序的稳定性和可用性。
 
-Electron属于桌面开发平台提供桌面应用开发的能力框架，上手简单。但框架本身缺少约定，因此使用Electron做应用开发，系统模块会出现各种千奇百怪的划分，代码会出现各种多种多样的写法。sugar-electron按照约定进行开发，降低团队协作成本。
+## 关于开发效率低
 
-#### 特性
+Electron属于桌面开发平台提供桌面应用开发的能力框架，上手简单。但框架本身缺少约定，因此使用Electron做应用开发，系统模块会出现各种千奇百怪的划分，代码会出现多种多样的写法，这会显著的增加学习成本，降低开发人员的效率。sugar-electron按照约定进行开发，降低团队协作成本，以提升效率。
+
+# 特性
 
 - 内置进程间通信模块，支持请求响应、发布订阅的方式
-- 内置进度间状态共享模块，支持状态同步变更、状态变更监听
+- 内置进程间状态共享模块，支持状态同步变更、状态变更监听
 - 内置进程管理模块，支持进程模块集中式管理
 - 内置配置管理模块，支持开发、测试、生产环境配置切换
-- 支持高度可扩展的插件机制
+- 内置插件模块，支持高度可扩展的插件机制
 - 框架侵入性低，项目接入改造成本低
 - 渐进式开发
 
 
-### 设计原则
+# 设计原则
 
- 一、sugar-electron一切围绕渲染进程为核心设计，主进程只是充当进程管理（创建、删除、异常监控）和调度（进程通信、状态功能桥梁）的守护进程的角色。
- 
+一、sugar-electron一切围绕渲染进程为核心设计，主进程只是充当进程管理（创建、删除、异常监控）和调度（进程通信、状态功能桥梁）的守护进程的角色。
+
 主进程不处理业务逻辑，这么设计的好处：
- 
+
 1. 可以避免主进程出现未捕获异常崩溃，导致应用退出
 1. 避免主进程出现阻塞，引起全部渲染进程阻塞，导致UI阻塞无响应
-
 
 二、sugar-electron所有的业务模块都是渲染进程。我们知道进程之间是不能直接访问的，为了让进程之间的调用就像同线程模块之间直接调用一样方便，sugar-electron提供了以下三个模块：
 
@@ -84,23 +93,27 @@ Electron属于桌面开发平台提供桌面应用开发的能力框架，上手
 
 
 **如下是框架逻辑视图：**
-![image](https://store-g1.seewo.com/easiclass-public/1800be3471d241ccad9109dcb052f446)
+![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy9lYmU0Yzc2NjBmOTA0ZWQzYjAxY2RlMTAyNjIyMDYxNg?x-oss-process=image/format,png)
 
-**sugar-electron基于类微内核架构设计，将内部分为以下七大核心模块，如下图所示：**
+**sugar-electron基于类微内核架构设计，如下图所示：**
 
-![image](https://store-g1.seewo.com/easiclass-public/b8a1306ad0b241bf96d70fe8ffcca83c)
+![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy84ZTVjNzY2NWY1NmE0ODRmOWQ4OGExNWIyZDQ2MzgxNA?x-oss-process=image/format,png)
 
-- 基础进程、服务进程、进程管理，提供业务模块开发能力
-- 进程间通信、进程间状态共享、配置中心，提供业务模块之间数据通信能力
-- 插件管理，提供框架功能扩展和业务复用能力
+**其框架核心有七大模块:**
+- 基础进程类BaseWindow
+- 服务进程类Service
+- 进程管理windowCenter
+- 进程间通信ipc
+- 进程间状态共享store
+- 配置中心config
+- 插件管理plugins
 
-### 核心功能
+# 核心功能
 
-
-#### 基础进程类——BaseWindow
+## 基础进程类——BaseWindow
 基础进程类BaseWindow基于BrowserWindow二次封装，sugar-electron以BaseWindow为载体，聚合了框架所有核心模块。
 
-##### 举个例子
+### 举个例子
 
 
 **使用BrowserWindow创建渲染进程**
@@ -128,10 +141,10 @@ const browserWindowInstance = winA.open();
 
 ```
 
-#### 服务进程类——Service
+## 服务进程类——Service
 在实际业务开发中，我们需要有一个进程去承载业务进程通用模块的功能，Service为此而生。Service进程实例实际上也是渲染进程，只是开发者只需要传入启动入口js文件，即可创建一个渲染进程，且BaseWindow一样，聚合框架所有核心模块。
 
-##### 举个例子
+### 举个例子
 
 ```
 // -----------------------主进程-----------------------
@@ -150,7 +163,7 @@ service.on('closed', function () {
 });
 ```
 
-#### 进程通信——ipc
+## 进程通信——ipc
 
 ipc作为进程间通信核心模块，支持三种通信方式：
 
@@ -159,18 +172,13 @@ ipc作为进程间通信核心模块，支持三种通信方式：
 1. 主进程与渲染进程通信
 
 
-##### 请求响应
+## 请求响应
 
 **逻辑视图：**
 
-![image](https://store-g1.seewo.com/easiclass-public/972f0e2a51b24e63a4a3410305a5f124)
+![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy85NzJmMGUyYTUxYjI0ZTYzYTRhMzQxMDMwNWE1ZjEyNA?x-oss-process=image/format,png)
 
-
-**流程图：**
-
-![image](https://store-g1.seewo.com/easiclass-public/c8e0379cb5e04abd86f021033d59b1b2)
-
-##### 举个例子
+### 举个例子
 
 
 ```
@@ -202,13 +210,13 @@ console.log(r2); // service-1响应
 2 | 找不到进程注册服务
 3 | 超时
 
-##### 发布订阅
+## 发布订阅
 
 **逻辑视图：**
 
-![image](https://store-g1.seewo.com/easiclass-public/0686fbbf2d0744e4a011e08d90ca3fe8)
+![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy8wNjg2ZmJiZjJkMDc0NGU0YTAxMWUwOGQ5MGNhM2ZlOA?x-oss-process=image/format,png)
 
-##### 举个例子
+### 举个例子
 
 
 ```
@@ -238,11 +246,11 @@ windowCenter.service.unsubscribe('service-publisher', cb);
 
 ```
 
-##### 主进程与渲染进程间通信（进程名"main"，为主进程预留）
+## 主进程与渲染进程间通信（进程名"main"，为主进程预留）
 
-sugar-electron框架设计理念所有业务模块都有各个渲染进程完成，所以基本上不存在与主进程通信的功能，但也非绝无仅有。所以sugar-electron进程通信模块支持与主进程通信接口。
+sugar-electron框架设计理念所有业务模块都有各个渲染进程完成，所以基本上不存在与主进程通信的功能，但不排除有主进程与渲染进程通信的场景。所以sugar-electron进程通信模块支持与主进程通信接口。
 
-##### 举个例子
+### 举个例子
 
 ```
 // 主进程
@@ -263,12 +271,12 @@ console.log(res); // 我是主进程
 
 ```
 
-#### 进程管理——windowCenter
+## 进程管理——windowCenter
 sugar-electron所有的业务模块都是渲染进程。我们知道进程之间是不能直接访问的，所有有了进程管理模块。
 
 所有的渲染进程都能在windowCenter中根据进程名对应的唯一key找到对应的渲染进程，让进程之间的调用就像同线程模块之间直接调用一样方便。
 
-##### 举个例子
+### 举个例子
 
 需求：winA内打开winB，并在winB webContents初始化完成后，设置窗口B setSize(400, 400)
 
@@ -315,7 +323,7 @@ const unsubscribe = winB.subscribe('ready-to-show', () => {
 
 ==备注：服务进程句柄通过windowCenter也可以获取==
 
-#### 进程间状态共享——store
+## 进程间状态共享——store
 sugar-electron是多进程架构设计，在业务系统中，避免不了多个业务进程共享状态。由于进程间内存相互独立，不互通，为此sugar-electron框架集成了进程状态共享模块。
 
 进程状态共享模块分成两个部分：
@@ -323,7 +331,7 @@ sugar-electron是多进程架构设计，在业务系统中，避免不了多个
 - 主进程申明共享状态数据
 - 渲染进程设置、获取共享状态数据，订阅状态变化
 
-##### 举个例子
+### 举个例子
 
 
 ```
@@ -390,7 +398,7 @@ await moduleA.setState({
 
 ```
 
-#### 配置——config
+## 配置——config
 sugar-electron提供了多环境配置，可根据环境变量切换配置，默认加载生成环境配置。
 
 ```
@@ -403,9 +411,9 @@ config
 
 **流程图：**
 
-![image](https://store-g1.seewo.com/easiclass-public/13ee6bf748514953a3a67f9c21606a28)
+![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy8xM2VlNmJmNzQ4NTE0OTUzYTNhNjdmOWMyMTYwNmEyOA?x-oss-process=image/format,png)
 
-##### 举个例子
+### 举个例子
 
 
 ```
@@ -423,7 +431,7 @@ console.log(config);
 - sugar-electron默认根据根目录config自动初始化
 
 
-#### 插件——plugins 
+## 插件——plugins 
 一个好用的框架离不开框架的可扩展性和业务复用。开发者通过plugins模块自定义插件和配置安装插件。
 
 
@@ -432,7 +440,7 @@ console.log(config);
 1. config目录配置问题plugins.js配置插件安装
 1. 使用插件
 
-##### 插件封装
+### 插件封装
 ```
 // 1、自定义封装ajax插件adpter
 const axios = require('axios');
@@ -478,7 +486,7 @@ module.exports = {
 }
 ```
 
-##### 插件安装
+## 插件安装
 在配置中心目录plugins.js配置插件安装
 ```
 config
@@ -501,7 +509,7 @@ exports.adpter = {
 };
 ```
 
-##### 插件使用
+## 插件使用
 
 ```
 // 3、使用插件——winA
@@ -509,10 +517,10 @@ const { plugins } = require('sugar-electron');
 const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
 ```
 
-### 自动初始化核心模块
+## 自动初始化核心模块
 使用过egg开发者应该知道，egg基础功能模块会根据对应的目录自动初始化。sugar-electron也提供根据目录自动初始化的能力。只需要使用框架启动接口start传入配置参数即可完成核心模块自动初始化
 
-##### 举个例子
+### 举个例子
 
 ```
 const { start } = require('sugar-electron');
@@ -526,9 +534,9 @@ start({
 })
 ```
 
-### 注意事项
+# 注意事项
 
-由于sugar-electron核心模块会自动判断主进程或者渲染进程环境，自动选择加载不同环境的模块，如果使用webpack打包会导致把两个环境的代码都打包进去，可能还会出现异常。
+1、由于sugar-electron核心模块会自动判断主进程或者渲染进程环境，自动选择加载不同环境的模块，如果使用webpack打包会导致把两个环境的代码都打包进去，可能还会出现异常。
 
 因此，如果使用webpack打包，引入sugar-electron采用如下方式：
 
@@ -542,9 +550,9 @@ const { ipc, store, ... } = require('sugar-electron/main')
 const { ipc, store, ... } = require('sugar-electron/render')
 ```
 
-### API
+# API
 
-#### start
+## start
 框架启动接口，自动挂载config、store、windowCenter、plugins模块
 
 **主进程API**
@@ -575,7 +583,7 @@ start({
 });
 ```
 
-#### BaseWindow
+## BaseWindow
 ```
 /**
  * 主进程调用
@@ -636,7 +644,7 @@ const instance = winA.open({...}); // 创建窗口
 instance === winA.getInstance(); // true
 ```
 
-#### Service
+## Service
 
 **主进程API**
 ```
@@ -667,7 +675,7 @@ service.on('closed', function () {
 });
 ```
 
-#### windowCenter
+## windowCenter
 
 **主进程、渲染进程API**
 
@@ -698,7 +706,7 @@ windowCenter['winA'].on('ready-to-show', () => {
 
 ```
 
-#### ipc
+## ipc
 **主进程API**
 **response 响应**
 ```
@@ -805,7 +813,7 @@ btn1.onclick = () => {
 }
 
 ```
-### store
+## store
 
 **主进程API**
 

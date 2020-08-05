@@ -14,7 +14,7 @@ function installPlugins() {
     try {
         const ctx = { ipc, store, config, windowCenter, plugins };
         const threadId = util.getThreadId();
-        const pluginsConfig = require(path.join(configPath, 'plugins'));
+        const pluginsConfig = window.require(path.join(configPath, 'plugins'));
         for (let key in pluginsConfig) {
             let item = pluginsConfig[key] || {};
             if (typeof item === 'function') {
@@ -24,7 +24,7 @@ function installPlugins() {
             const isInclude = !util.isArray(include) || include.length === 0 || include.indexOf(threadId) > -1;
             if (isInclude && enable) {
                 const pluginPath = package || item.path || path.join(getDefaultPath(), key);
-                plugins[key] = require(pluginPath).install(ctx, params);
+                plugins[key] = window.require(pluginPath).install(ctx, params);
             }
         }
     } catch (error) {
@@ -35,6 +35,5 @@ function installPlugins() {
 function getDefaultPath() {
     return sugarOption.pluginsPath || path.join(sugarOption.basePath, 'plugins')
 }
-
 
 module.exports = installPlugins();
