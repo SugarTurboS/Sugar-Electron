@@ -248,7 +248,9 @@ windowCenter.service.unsubscribe('service-publisher', cb);
 
 ## 主进程与渲染进程间通信（进程名"main"，为主进程预留）
 
-sugar-electron框架设计理念所有业务模块都有各个渲染进程完成，所以基本上不存在与主进程通信的功能，但不排除有主进程与渲染进程通信的场景。所以sugar-electron进程通信模块支持与主进程通信接口。
+sugar-electron框架设计理念所有业务模块都有各个渲染进程完成，所以基本上不存在与主进程通信的功能，但不排除有主进程与渲染进程通信的场景。
+
+所以sugar-electron进程通信模块支持与主进程通信接口，接口与渲染进程保持一致，只是主进程名占用==“main”==
 
 ### 举个例子
 
@@ -261,11 +263,6 @@ ipc.response('test', (data, cb) => {
 });
  
 // winA
-const { windowCenter } = require('sugar-electron');
-const res = windowCenter.main.request('test', '我是渲染进程');
-console.log(res); // 我是主进程
-
-// 或者
 const res = ipc.request('main', 'test', '我是渲染进程');
 console.log(res); // 我是主进程
 
@@ -707,19 +704,7 @@ windowCenter['winA'].on('ready-to-show', () => {
 ```
 
 ## ipc
-**主进程API**
-**response 响应**
-```
-/**
- * 注册响应服务
- * @param {string} eventName 事件名  
- * @param {function} callback 回调
- * 使用方式，渲染进程ipc.request('main', eventName, param)
- */
-response(eventName, callback)
-```
-
-**渲染进程API**
+**主进程/渲染进程API**
 
 **setDefaultRequestTimeout 设置响应超时时间**
 
@@ -826,7 +811,7 @@ btn1.onclick = () => {
 createStore(store)
 ```
 
-**渲染进程API**
+**渲染进程/主进程API**
 
 **setState 设置state**
 

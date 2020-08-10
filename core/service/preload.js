@@ -1,3 +1,3 @@
-const remote = require('electron').remote;
+const remote = window.require('electron').remote;
 const runPath = remote.getCurrentWindow().runPath;
-require(runPath);
+window.require(runPath);

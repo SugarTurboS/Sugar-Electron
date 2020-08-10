@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-const { app} = require('electron');
+const { app, store } = require('electron');
 const appName = 'electron-core';
 const defaultState = {
    webPreferences: {
@@ -7,7 +7,7 @@ const defaultState = {
    }
 };
 app.on('ready', function () {
-   const { start, BaseWindow, windowCenter } = require('../core');
+   const { start, BaseWindow, windowCenter, store, ipc } = require('../core');
 
    // 启动sugar-electron
    start({
@@ -24,6 +24,24 @@ app.on('ready', function () {
    service.start(true);
    const { winA } = windowCenter;
    winA.open();
+
+   setInterval(() => {
+      store.setState({
+         a: 'a',
+         A: 'A'
+      });
+      store.getModule('moduleA').setState({
+         b: 'b'
+      });
+
+      ipc.request('winA', 'test', {}).then(res => {
+         console.log('AAA', res);
+      });
+   }, 10000);
+
+   ipc.subscribe('winA', 'test1', (data) =>{
+      console.log('BBB', data);
+   });
 });
 
 
