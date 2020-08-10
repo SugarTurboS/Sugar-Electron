@@ -2,7 +2,6 @@
 const { BrowserWindow } = require('electron');
 const ipc = require('../ipc');
 const Events = require('events');
-const path = require('path');
 const windowCenter = require('../windowCenter/main');
 class Service extends Events {
     constructor(name, runPath, isDebug = false) {
@@ -25,8 +24,7 @@ class Service extends Events {
                 fullscreen: false,
                 skipTaskbar: false,
                 webPreferences: {
-                    nodeIntegration: true,
-                    preload: path.join(__dirname, 'preload.js')
+                    nodeIntegration: true
                  }
             });
          

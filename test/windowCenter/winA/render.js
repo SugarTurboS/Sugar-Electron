@@ -1,5 +1,5 @@
 /* eslint-disable require-atomic-updates */
-const { windowCenter } = require('../../../core');
+const { windowCenter, ipc } = require('../../../core');
 window.onload = function () {
     const btn1 = document.querySelector('#btn1');
     const btn2 = document.querySelector('#btn2');
@@ -7,6 +7,10 @@ window.onload = function () {
     const text = document.querySelector('#text');
     // 获取窗口B句柄
     const winB = windowCenter.winB;
+
+    ipc.response('test', (data, cb) => {
+        cb('I am winA')
+    })
 
     winB.subscribe('ready-to-show', () => {
         text.innerHTML += '<p>winB初始化完毕</p>';

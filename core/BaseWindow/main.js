@@ -59,7 +59,7 @@ class BaseWindow extends Events {
 
     // 发布通知
     publisher(eventName, params = {}) {
-        ipc.publisher({ header: { fromId: this.name, eventName }, body: params });
+        ipc._publisher({ header: { fromId: this.name, eventName }, body: params });
         this.emit(eventName, params);
     }
 

@@ -1,11 +1,11 @@
 {
   "name": "sugar-electron",
-  "version": "1.0.41",
+  "version": "1.0.43",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start": "electron test"
+    "start": "D:\\work\\easiclass-pc-new\\output\\EasiClass.exe test"
   },
   "author": "Tomey",
   "license": "ISC",

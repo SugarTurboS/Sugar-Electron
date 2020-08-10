@@ -1,6 +1,6 @@
 /* eslint-disable no-async-promise-executor */
 const { remote } = require('electron');
-const { STORE, SET_STATE, STATE_CHANGE } = require('./const');
+const { STORE, SET_STATE, STATE_CHANGE, MAIN_PROCESS_NAME } = require('./const');
 const ipc = require('../ipc/render');
 
 module.exports = {
@@ -18,7 +18,7 @@ module.exports = {
             modules = arguments[2];
         }
         return new Promise(async (resolve, reject) => {
-            const r = await ipc.request('main', SET_STATE, { type, key, value, state, modules });
+            const r = await ipc.request(MAIN_PROCESS_NAME, SET_STATE, { type, key, value, state, modules });
             if (r) {
                 resolve(r);
             } else {
@@ -37,23 +37,22 @@ module.exports = {
     },
     subscribe(cb, modules = []) {
         const eventName = `${STATE_CHANGE}${modules.join('|')}`;
-        ipc.subscribe('main', eventName, cb);
+        ipc.subscribe(MAIN_PROCESS_NAME, eventName, cb);
         return () => {
             this.unsubscribe(cb, modules);
         }
     },
     unsubscribe(cb, modules = []) {
         const eventName = `${STATE_CHANGE}${modules.join('|')}`;
-        ipc.unsubscribe('main', eventName, cb);
+        ipc.unsubscribe(MAIN_PROCESS_NAME, eventName, cb);
     },
     getModule(moduleName, modules = []) {
         const key = `${STORE}${modules.concat([moduleName]).join('|')}`;
         const _modules = modules.concat([moduleName]);
-        const self = this;
         return {
             state: remote.getGlobal(key),
             getModule: moduleName => this.getModule(moduleName, _modules),
-            setState: function () { return self.setState(...arguments, _modules); },
+            setState: (...args) => this.setState(...args, _modules),
             subscribe: cb => this.subscribe(cb, _modules),
             unsubscribe: cb => this.unsubscribe(cb, _modules),
             getModules: () => this.getModules(_modules)
