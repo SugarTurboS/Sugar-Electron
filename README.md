@@ -1,5 +1,7 @@
 # Sugar-Electron
 
+> 基于Electorn的轻量级开发框架
+
 [![NPM version][npm-image]][npm-url]
 [![NPM quality][quality-image]][quality-url]
 [![David deps][david-image]][david-url]
