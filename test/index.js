@@ -35,12 +35,14 @@ app.on('ready', function () {
       });
 
       ipc.request('winA', 'test', {}).then(res => {
-         console.log('AAA', res);
+         console.log('测试主进程请求winA');
       });
+
+      ipc.publisher('test2', '测试主进程发布')
    }, 10000);
 
    ipc.subscribe('winA', 'test1', (data) =>{
-      console.log('BBB', data);
+      console.log('测试主进程订阅winA');
    });
 });
 

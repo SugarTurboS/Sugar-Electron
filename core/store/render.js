@@ -1,6 +1,7 @@
 /* eslint-disable no-async-promise-executor */
 const { remote } = require('electron');
-const { STORE, SET_STATE, STATE_CHANGE, MAIN_PROCESS_NAME } = require('./const');
+const { STORE, SET_STATE, STATE_CHANGE } = require('./const');
+const { MAIN_PROCESS_NAME } = require('../const');
 const ipc = require('../ipc/render');
 
 module.exports = {

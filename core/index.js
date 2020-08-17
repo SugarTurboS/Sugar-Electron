@@ -1,5 +1,3 @@
-const { SUGAR_OPTION } = require('./const');
-global[SUGAR_OPTION] = {};
 const common = require('./common');
 const modules = {
     BaseWindow: require('./BaseWindow'),
@@ -11,4 +9,4 @@ const modules = {
     windowCenter: require('./windowCenter')
 };
 
-module.exports = Object.assign(common, modules);
+module.exports = Object.assign({}, common, modules);
