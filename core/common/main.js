@@ -1,5 +1,6 @@
 const path = require('path');
 const { SUGAR_OPTION } = require('../const');
+global[SUGAR_OPTION] = {};
 const config = require('../config/main');
 const store = require('../store/main');
 const fs = require('fs');

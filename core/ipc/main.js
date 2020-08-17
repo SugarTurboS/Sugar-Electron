@@ -9,9 +9,9 @@ const {
   SUBSCRIBER,
   UNSUBSCRIBER,
   IPC_NAME,
-  RESPONSE_OVERTIME,
-  MAIN_PROCESS_NAME
+  RESPONSE_OVERTIME
 } = require('./const');
+const { MAIN_PROCESS_NAME } = require('../const');
 const processes = {}; // 进程模块合集
 const subscribeTasks = {}; // 缓存进程订阅任务
 const responseCallbacks = {};
@@ -79,7 +79,7 @@ class MainSDK {
       const { header = {}, body } = params;
       const { fromId, toId } = header;
       processes[fromId] && processes[fromId].webContents.send(IPC_NAME, {
-        header: Object.assign(header, {
+        header: Object.assign({}, header, {
           fromId: toId,
           toId: fromId
         }),
@@ -259,7 +259,7 @@ class MainSDK {
     this._publisher({ header: { fromId: MAIN_PROCESS_NAME, eventName }, body: params });
   }
 
-  subscribe(toId = '', eventName = '', callback = () => { }) {
+  subscribe(toId = '', eventName = '', callback = () => {}) {
     if (!subscribeCb[`${toId}${eventName}`]) {
       subscribeCb[`${toId}${eventName}`] = [];
     }

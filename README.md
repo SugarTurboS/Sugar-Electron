@@ -623,11 +623,37 @@ getInstance(option)
 /**
  * @param {string} eventName 通知事件名
  * @param {object} param 参数
- * @return {browserWindow}
+ * @return {promise}
  */
 publisher(eventName, param)
 ```
-
+**subscribe [实例方法]向当前窗口订阅通知，可参考ipc模块**
+```
+/**
+ * @param {string} eventName 通知事件名
+ * @param {function} callback 回调
+ * @return {unsubscribe} 取消订阅函数
+ */
+subscribe(eventName, callback)
+```
+**unsubscribe [实例方法]向当前窗口取消订阅通知，可参考ipc模块**
+```
+/**
+ * @param {string} eventName 通知事件名
+ * @param {function} callback 回调
+ */
+unsubscribe(eventName, callback)
+```
+**request [实例方法]向当前窗口发起请求，可参考ipc模块**
+```
+/**
+ * @param {string} eventName 请求事件名事件名
+ * @param {object} param 参数
+ * @param {number} timeout 超时时间
+ * @return {promise}
+ */
+request(eventName, param, timeout)
+```
 **使用举例**
 ```
 // -----------------------主进程-----------------------

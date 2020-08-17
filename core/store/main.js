@@ -1,4 +1,5 @@
-const { STORE, SET_STATE, STATE_CHANGE, MAIN_PROCESS_NAME } = require('./const');
+const { STORE, SET_STATE, STATE_CHANGE } = require('./const');
+const { MAIN_PROCESS_NAME } = require('../const');
 const ipc = require('../ipc/main');
 const Event = require('events');
 const event = new Event();
@@ -17,7 +18,7 @@ function initStore(store, modules = []) {
                     var keyState = `${STORE}${modules.join('|')}`;
                     global[keyState] = item;
                     if (keyState === STORE) {
-                        modules.state = global[keyState];
+                        moduleExports.state = global[keyState];
                     }
                     break;
                 case 'modules':
@@ -60,7 +61,7 @@ function setState(json) {
 }
 
 // 初始化
-const modules = {
+const moduleExports = {
     createStore(store = {}) {
         initStore(store);
     },
@@ -118,4 +119,4 @@ const modules = {
     }
 };
 
-module.exports = modules;
+module.exports = moduleExports;
