@@ -41,6 +41,10 @@ sugar-electron-cli init
 项目源码地址：
 [https://github.com/SugarTurboS/Sugar-Electron](https://github.com/SugarTurboS/Sugar-Electron)
 
+文档地址：
+[https://sugarturbos.github.io/Sugar-Electron/](https://sugarturbos.github.io/Sugar-Electron/)
+
+
 如有任何疑问，可以扫码加入微信群聊讨论
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200812140641160.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0ZvcmV2ZXJDamw=,size_16,color_FFFFFF,t_70#pic_center)
