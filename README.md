@@ -19,6 +19,8 @@
 [lincense-image]: https://img.shields.io/github/license/SugarTeam/Sugar-Electron?style=flat-square
 [lincense-url]: https://github.com/SugarTeam/Sugar-Electron/blob/master/LICENSE
 
+简体中文 | [English](./README.en.md)
+
 ## 安装
 
 ```bash
@@ -87,13 +89,13 @@ Electron属于桌面开发平台提供桌面应用开发的能力框架，上手
 主进程不处理业务逻辑，这么设计的好处：
 
 1. 可以避免主进程出现未捕获异常崩溃，导致应用退出
-1. 避免主进程出现阻塞，引起全部渲染进程阻塞，导致UI阻塞无响应
+2. 避免主进程出现阻塞，引起全部渲染进程阻塞，导致UI阻塞无响应
 
 二、sugar-electron所有的业务模块都是渲染进程。我们知道进程之间是不能直接访问的，为了让进程之间的调用就像同线程模块之间直接调用一样方便，sugar-electron提供了以下三个模块：
 
 1. 进程间通信模块
-1. 进程间状态共享模块
-1. 进程管理模块
+2. 进程间状态共享模块
+3. 进程管理模块
 
 三、为了保证框架核心的足够精简、稳定、高效，因此框架的扩展能力至关重要，为此sugar-electron提供自定义插件机制扩展框架能力，还可以促进业务逻辑复用，甚至于生态圈的形成。
 
