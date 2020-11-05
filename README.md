@@ -35,6 +35,9 @@ npm i sugar-electron-cli -g
 sugar-electron-cli init
 ```
 
+## 注意事项
+sugar-electron渲染进程依赖node模块，所以nodeIntegration、enableRemoteModule必须是开启状态，[详情请参考](https://www.electronjs.org/docs/api/browser-window)
+
 ## 前言
 今天给大家带来一款基于Electron桌面开发平台的自研应用框架Sugar-Electron，期望能改善Electron应用稳定性和帮助开发团队降低开发和维护成本。
 
