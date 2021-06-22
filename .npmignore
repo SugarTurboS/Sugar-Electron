@@ -1,2 +1,4 @@
 node_modules
 test/
+jest.config.jest.js
+.eslintrc.js

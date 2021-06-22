@@ -4,6 +4,7 @@ const ipc = require('../ipc/main');
 const windowCenter = require('../windowCenter/main');
 const Events = require('events')
 const windowEvents = [
+    'close',
     'closed',
     'session-end',
     'unresponsive',
@@ -35,7 +36,7 @@ const windowEvents = [
     'rotate-gesture',
     'sheet-begin',
     'sheet-end',
-    'new-window-for-tab' 
+    'new-window-for-tab'
 ];
 // 窗体默认属性
 const defaultOption = {};
@@ -82,11 +83,16 @@ class BaseWindow extends Events {
         return this.instance;
     }
 
+    // 判断窗口实例是否存在
+    isInstanceExist() {
+        return !!this.instance;
+    }
+
     getInstance() {
         return this.instance;
     }
 
-      // 发布通知
+    // 发布通知
     publisher(eventName, params = {}) {
         ipc._publisher({ header: { fromId: this.name, eventName }, body: params });
         this.emit(eventName, params);

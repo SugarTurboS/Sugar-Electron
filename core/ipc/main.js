@@ -12,6 +12,7 @@ const {
   RESPONSE_OVERTIME
 } = require('./const');
 const { MAIN_PROCESS_NAME } = require('../const');
+const { WINDOW_CENTER_GET_INFO } = require('../windowCenter/const');
 const processes = {}; // 进程模块合集
 const subscribeTasks = {}; // 缓存进程订阅任务
 const responseCallbacks = {};
@@ -132,7 +133,7 @@ class MainSDK {
   // 发布消息
   _publisher(params = {}) {
     try {
-      const { fromId, eventName } = params.header;
+      const { eventName, model, fromId, toId } = params.header;
       for (let fromKey in subscribeTasks[fromId]) {
         const arr = subscribeTasks[fromId][fromKey][eventName];
         if (arr) {
@@ -155,7 +156,7 @@ class MainSDK {
       // 主进程订阅
       if (subscribeCb[`${fromId}${eventName}`]) {
         subscribeCb[`${fromId}${eventName}`].forEach(callback => {
-          callback(params.body);
+          callback(params.body, { eventName, model, fromId, toId });
         });
       }
     } catch (error) {
@@ -193,7 +194,7 @@ class MainSDK {
     defaultRequestTimeout = timeout;
   }
 
-  request(toId = '', eventName = '', data = {}, timeout = defaultRequestTimeout) {
+  request(toId = '', eventName = '', data, timeout = defaultRequestTimeout) {
     const threadId = MAIN_PROCESS_NAME;
     return new Promise((resolve, reject) => {
       try {
@@ -217,7 +218,7 @@ class MainSDK {
 
         requestCb[requestId] = cb;
 
-        this._send({
+        const param = {
           header: {
             model: REQUEST,
             fromId: toId,
@@ -226,7 +227,13 @@ class MainSDK {
             requestId
           },
           body: data
-        });
+        }
+
+        if (toId === MAIN_PROCESS_NAME) {
+          this._requestResponseMessageForwarding(param);
+        } else {
+          this._send(param);
+        }
       } catch (error) {
         reject(error);
         console.error(error);
@@ -239,7 +246,12 @@ class MainSDK {
       const createCb = (header) => {
         return (result) => {
           header.model = REPONSE;
-          this._send({ header, body: { code: RESPONSE_OK, data: result } });
+          const param = { header, body: { code: RESPONSE_OK, data: result } };
+          if (header.fromId === MAIN_PROCESS_NAME) {
+            this._requestResponseMessageForwarding(param);
+          } else {
+            this._send(param);
+          }
         }
       }
       responseCallbacks[eventName] = function (json) {
@@ -255,30 +267,79 @@ class MainSDK {
     delete responseCallbacks[eventName];
   }
 
-  publisher(eventName = '', params = {}) {
+  publisher(eventName = '', params) {
     this._publisher({ header: { fromId: MAIN_PROCESS_NAME, eventName }, body: params });
   }
 
-  subscribe(toId = '', eventName = '', callback = () => {}) {
-    if (!subscribeCb[`${toId}${eventName}`]) {
-      subscribeCb[`${toId}${eventName}`] = [];
+  subscribe() {
+    let toIds = [];
+    let eventNames = [];
+    let callback = () => {};
+    const unsubscribes = [];
+     // 如果第一个参数不传，则默认订阅所有进程事件，包括主进程
+    if (arguments.length === 2) {
+      toIds = global[WINDOW_CENTER_GET_INFO].names.concat(['main']);
+      eventNames = util.isArray(arguments[0]) ? arguments[0] : [arguments[0]];
+      callback = arguments[1];
+    } else if (arguments.length === 3) {
+      toIds = [arguments[0]];
+      eventNames = util.isArray(arguments[1]) ? arguments[1] : [arguments[1]];
+      callback = arguments[2];
     }
-    subscribeCb[`${toId}${eventName}`].push(callback);
-    return () => {
-      this.unsubscribe(toId, eventName, callback);
+
+    const _subscribe = (toId, eventName, callback) => {
+      if (!subscribeCb[`${toId}${eventName}`]) {
+        subscribeCb[`${toId}${eventName}`] = [];
+      }
+      subscribeCb[`${toId}${eventName}`].push(callback);
+      return () => {
+        this.unsubscribe(toId, eventName, callback);
+      }
+    };
+
+    for (let i = 0; i < toIds.length; i++) {
+      for (let j = 0; j < eventNames.length; j++) {
+        unsubscribes.push(_subscribe(toIds[i], eventNames[j], callback));
+      }
     }
+
+    return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   }
 
-  unsubscribe(toId = '', eventName, callback) {
-    const callbacks = subscribeCb[`${toId}${eventName}`];
-    if (callbacks) {
-      for(let i = 0; i < callbacks.length; i++) {
-        if (callbacks[i] === callback) {
-          callbacks.splice(i, 1);
+  unsubscribe() {
+    let toIds = [];
+    let eventNames = [];
+    let callback = () => {};
+    // 如果第一个参数不传，则默认订阅所有进程事件，包括主进程
+    if (arguments.length === 2) {
+      toIds = global[WINDOW_CENTER_GET_INFO].names.concat(['main']);
+      eventNames = util.isArray(arguments[0]) ? arguments[0] : [arguments[0]];
+      callback = arguments[1];
+    } else if (arguments.length === 3) {
+      toIds = [arguments[0]];
+      eventNames = util.isArray(arguments[1]) ? arguments[1] : [arguments[1]];
+      callback = arguments[2];
+    }
+
+    const _unsubscribe = (toId, eventName, callback) => {
+      const callbacks = subscribeCb[`${toId}${eventName}`];
+      if (callbacks) {
+        for (let i = 0; i < callbacks.length; i++) {
+          if (callbacks[i] === callback) {
+            callbacks.splice(i, 1);
+          }
         }
+      }
+    };
+    
+    for (let i = 0; i < toIds.length; i++) {
+      for (let j = 0; j < eventNames.length; j++) {
+        _unsubscribe(toIds[i], eventNames[j], callback);
       }
     }
   }
+
+  
 }
 
 module.exports = new MainSDK();

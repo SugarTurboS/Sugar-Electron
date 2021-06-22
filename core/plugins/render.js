@@ -20,11 +20,15 @@ function installPlugins() {
             if (typeof item === 'function') {
                 item = item(sugarOption);
             }
-            const { include, enable, package, params } = item;
-            const isInclude = !util.isArray(include) || include.length === 0 || include.indexOf(threadId) > -1;
-            if (isInclude && enable) {
-                const pluginPath = package || item.path || path.join(getDefaultPath(), key);
-                plugins[key] = window.require(pluginPath).install(ctx, params);
+            
+            const { include, env, enable, package, params } = item;
+
+            if (!util.isArray(env) || env.length === 0 || env.indexOf('render') > -1) {
+                const isInclude = !util.isArray(include) || include.length === 0 || include.indexOf(threadId) > -1;
+                if (isInclude && enable) {
+                    const pluginPath = package || item.path || path.join(getDefaultPath(), key);
+                    plugins[key] = window.require(pluginPath).install(ctx, params);
+                }
             }
         }
     } catch (error) {

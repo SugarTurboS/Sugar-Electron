@@ -4,7 +4,7 @@ const { WINDOW_CENTER_IPC_NAME, WINDOW_CENTER_GET_INFO } = require('./const');
 const { MAIN_PROCESS_NAME } = require('../const');
 const modules = {};
 const ipcKeys = ['request', 'subscribe', 'unsubscribe'];
-async function actionWindow (windowName, action = '', args) {
+async function actionWindow(windowName, action = '', args) {
     return await ipc.request(MAIN_PROCESS_NAME, WINDOW_CENTER_IPC_NAME, {
         windowName, action, args
     });
@@ -14,7 +14,7 @@ const { names = [], keys = [] } = remote.getGlobal(WINDOW_CENTER_GET_INFO);
 names.concat([MAIN_PROCESS_NAME]).forEach(name => {
     modules[name] = {};
     if (name !== MAIN_PROCESS_NAME) {
-        keys.forEach(key => {
+        keys.concat(['isInstanceExist']).forEach(key => {
             modules[name][key] = function () {
                 const args = [].slice.call(arguments);
                 return actionWindow(name, key, args);
