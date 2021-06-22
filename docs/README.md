@@ -8,7 +8,7 @@
 
 **使用BrowserWindow创建渲染进程**
 
-```
+``` js
 // 在主进程中.
 const { BrowserWindow } = require('electron')
 let win = new BrowserWindow({ width: 800, height: 600, show: false });
@@ -19,7 +19,7 @@ win.loadURL('https://github.com');
 
 **使用BaseWindow创建渲染进程**
 
-```
+``` js
 // 在主进程中.
 const { BaseWindow } = require('sugar-electron');
 let win = new BaseWindow('winA', {
@@ -36,7 +36,7 @@ const browserWindowInstance = winA.open();
 
 ### 举个例子
 
-```
+``` js
 // -----------------------主进程-----------------------
 const service = new Service('service', path.join(__dirname, 'app.js'), true);
 service.on('success', function () {
@@ -71,7 +71,7 @@ ipc作为进程间通信核心模块，支持三种通信方式：
 ### 举个例子
 
 
-```
+``` js
 // 服务进程service
 const { ipc } = require('sugar-electron');  
 // 注册响应服务A1
@@ -109,7 +109,7 @@ console.log(r2); // service-1响应
 ### 举个例子
 
 
-```
+``` js
 // 服务进程service
 const { ipc } = require('sugar-electron');
 setInterval(() => {
@@ -144,7 +144,7 @@ sugar-electron框架设计理念所有业务模块都有各个渲染进程完成
 
 ### 举个例子
 
-```
+``` js
 // 主进程
 const { ipc } = require('sugar-electron');
 ipc.response('test', (data, cb) => {
@@ -168,7 +168,7 @@ sugar-electron所有的业务模块都是渲染进程。我们知道进程之间
 需求：winA内打开winB，并在winB webContents初始化完成后，设置窗口B setSize(400, 400)
 
 
-```
+``` js
 // 主进程
 const { BaseWindow, Service, windowCenter } = require('sugar-electron');
 // 设置窗口默认设置，详情请参考Electron BrowserWindow文档
@@ -190,7 +190,7 @@ const winB = new BaseWindow('winB', {
 windowCenter.winA.open(); // 等同于winA.open();
 ```
 
-```
+``` js
 // winA
 const { windowCenter } = require('sugar-electron');
 const winB = windowCenter.winB;
@@ -221,7 +221,7 @@ sugar-electron是多进程架构设计，在业务系统中，避免不了多个
 ### 举个例子
 
 
-```
+``` js
 // 主进程——初始化申明state
 const { store } = require('sugar-electron');
 store.createStore({
@@ -250,7 +250,7 @@ store.createStore({
 });
 ```
 
-```
+``` js
 // 渲染进程A，订阅state变化
 const { store } = require('sugar-electron');
 console.log(store.state.name); // 我是store
@@ -270,7 +270,7 @@ const unsubscribeA = moduleA.subscribe((data) => {
 
 ```
 
-```
+``` js
 // 渲染进程B，设置state
 const { store } = require('sugar-electron');
 await store.setState({
@@ -288,7 +288,7 @@ await moduleA.setState({
 ## 配置——config
 sugar-electron提供了多环境配置，可根据环境变量切换配置，默认加载生成环境配置。
 
-```
+``` js
 config
 |- config.base.js     // 基础配置
 |- config.js          // 生产配置
@@ -298,15 +298,15 @@ config
 
 **流程图：**
 
-![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy8xM2VlNmJmNzQ4NTE0OTUzYTNhNjdmOWMyMTYwNmEyOA?x-oss-process=image/format,png)
+![image](https://store-g1.seewo.com/easiclass-public/7132693d3a8c429f9ec1bb650a8034fc)
 
 ### 举个例子
-
-
-```
+``` js
 // 主进程
-const { config } = require('sugar-electron');
-global.config = config.setOption({ appName: 'sugar-electron', configPath: path.join(__dirname, 'config') });
+const { config, start } = require('sugar-electron');
+start().then(() => {
+  console.log(config);
+});
 
 // 渲染进程
 const { config } = require('sugar-electron');
@@ -328,7 +328,7 @@ console.log(config);
 1. 使用插件
 
 ### 插件封装
-```
+``` js
 // 1、自定义封装ajax插件adpter
 const axios = require('axios');
 const apis = {
@@ -375,7 +375,7 @@ module.exports = {
 
 ## 插件安装
 在配置中心目录plugins.js配置插件安装
-```
+``` js
 config
 |- config.base.js     // 基础配置
 |- config.js          // 生产配置
@@ -383,7 +383,7 @@ config
 |- config.dev.js      // 开发配置——环境变量env=dev
 |- plugins.js         // 插件配置文件
 ```
-```
+``` js
 // 2、配置插件安装
 const path = require('path');
 exports.adpter = {
@@ -391,6 +391,7 @@ exports.adpter = {
     path: path.join(__dirname, '../plugins/adpter'),  // 插件绝对路径
     package: 'adpter',  // 插件包名，如果package与path同时存在，则package优先级更高
     enable: true, // 是否启动插件
+    env: ['main', 'render'], // 插件运行环境，main在主进程安装，render在渲染进程安装
     include: ['winA'], // 插件使用范围，如果为空，则所有渲染进程安装
     params: { timeout: 20000 } // 传入插件参数
 };
@@ -398,27 +399,27 @@ exports.adpter = {
 
 ## 插件使用
 
-```
+``` js
 // 3、使用插件——winA
 const { plugins } = require('sugar-electron');
 const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
 ```
 
-## 自动初始化核心模块
-使用过egg开发者应该知道，egg基础功能模块会根据对应的目录自动初始化。sugar-electron也提供根据目录自动初始化的能力。只需要使用框架启动接口start传入配置参数即可完成核心模块自动初始化
+## 启动框架
+启动框架，初始化框架核心模块，且在app.isReady() === true，返回Promise.resolve();
 
 ### 举个例子
 
-```
+``` js
 const { start } = require('sugar-electron');
 start({
-    appName: '应用名',
-    basePath: '启动目录',
-    configPath: '配置中心目录', // 可选，默认basePath + './config'
-    storePath: '进程状态共享目录', // 可选，默认basePath + './store'
-    windowCenterPath: '配置中心目录', // 可选，默认basePath + './windowCenter'
-    pluginsPath: '插件目录', // 可选，默认basePath + './plugins'
-})
+    useAppPathConfig: false, // 可选，是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并
+    basePath: '启动目录', // 可选，默认根目录
+    configPath: '配置中心目录', // 可选，默认basePath/config
+    storePath: '进程状态共享目录', // 可选，默认basePath/store
+    windowCenterPath: '配置中心目录', // 可选，默认basePath/windowCenter
+    pluginsPath: '插件目录', // 可选，默认basePath/plugins
+}).then(() => console.log('app ready'));
 ```
 
 # 注意事项
@@ -428,7 +429,7 @@ start({
 因此，如果使用webpack打包，引入sugar-electron采用如下方式：
 
 
-```
+``` js
 // 主进程
 const { ipc, store, ... } = require('sugar-electron/main')
 
@@ -440,38 +441,39 @@ const { ipc, store, ... } = require('sugar-electron/render')
 # API
 
 ## start
-框架启动接口，自动挂载config、store、windowCenter、plugins模块
+启动框架，初始化框架核心模块，且在app.isReady() === true，返回Promise.resolve();
 
 **主进程API**
 
-```
+``` js
 /**
- * 启动sugar
+ * 自动判断app.whenReady启动框架初始化
  * @param {object} options 启动参数
- * @param {string} options.appName 应用名
- * @param {string} options.basePath 启动目录
- * @param {string} options.configPath 配置目录，默认basePath + './config'
- * @param {string} options.storePath 进程状态共享目录，默认basePath + './store'
- * @param {string} options.windowCenterPath 窗口中心目录，默认basePath + './windowCenter'
- * @param {string} options.pluginsPath 插件目录，默认basePath + './plugins'
+ * @param {string} options.useAppPathConfig 是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并，默认false
+ * @param {string} options.basePath 启动目录，默认根目录
+ * @param {string} options.configPath 配置目录，默认basePath/config
+ * @param {string} options.storePath 进程状态共享目录，默认basePath/store
+ * @param {string} options.windowCenterPath 窗口中心目录，默认basePath/windowCenter
+ * @param {string} options.pluginsPath 插件目录，默认basePath/plugins
+ * @return {Promise}
 */
 start(opions)
 ```
 **使用举例**
-```
+``` js
 // -----------------------主进程-----------------------
 start({
-    appName: string, 应用名，%appData%目录
-    basePath: string, 启动目录
-    configPath: string, 配置目录
-    storePath: string, 进程状态共享目录
-    windowCenterPath: string, 窗口中心目录
-    pluginsPath: string 插件目录
+    useAppPathConfig: boolean,
+    basePath: string,
+    configPath: string,
+    storePath: string,
+    windowCenterPath: string,
+    pluginsPath: string
 });
 ```
 
 ## BaseWindow
-```
+``` js
 /**
  * 主进程调用
  * @param {string} name
@@ -482,7 +484,7 @@ new BaseWindow(name, option);
 **主进程API**
 
 **setDefaultOptions [类方法]设置窗口默认配置**
-```
+``` js
 /**
  * @param {object} option 参考electron BrowserWindow
  */
@@ -490,24 +492,30 @@ setDefaultOptions(option)
 ```
 
 **open [实例方法]创建一个BrowserWindow实例**
-```
+``` js
 /**
  * @param {object} option 参考electron BrowserWindow
  * @return {browserWindow}
  */
 open(option)
 ```
-
 **getInstance [实例方法]**
-```
+``` js
 /**
  * @return {browserWindow}
  */
-getInstance(option)
+getInstance()
+```
+**isInstanceExist [实例方法]判断窗口实例是否存在**
+``` js
+/**
+ * @return {browserWindow}
+ */
+isInstanceExist()
 ```
 
 **publisher [实例方法]向当前窗口发布通知，可参考ipc模块**
-```
+``` js
 /**
  * @param {string} eventName 通知事件名
  * @param {object} param 参数
@@ -516,7 +524,7 @@ getInstance(option)
 publisher(eventName, param)
 ```
 **subscribe [实例方法]向当前窗口订阅通知，可参考ipc模块**
-```
+``` js
 /**
  * @param {string} eventName 通知事件名
  * @param {function} callback 回调
@@ -525,7 +533,7 @@ publisher(eventName, param)
 subscribe(eventName, callback)
 ```
 **unsubscribe [实例方法]向当前窗口取消订阅通知，可参考ipc模块**
-```
+``` js
 /**
  * @param {string} eventName 通知事件名
  * @param {function} callback 回调
@@ -533,7 +541,7 @@ subscribe(eventName, callback)
 unsubscribe(eventName, callback)
 ```
 **request [实例方法]向当前窗口发起请求，可参考ipc模块**
-```
+``` js
 /**
  * @param {string} eventName 请求事件名事件名
  * @param {object} param 参数
@@ -543,7 +551,7 @@ unsubscribe(eventName, callback)
 request(eventName, param, timeout)
 ```
 **使用举例**
-```
+``` js
 // -----------------------主进程-----------------------
 const { BaseWindow } = require('sugar-electron');
 BaseWindow.setDefaultOptions({
@@ -560,7 +568,7 @@ instance === winA.getInstance(); // true
 ## Service
 
 **主进程API**
-```
+``` js
 /*
  * 创建服务进程
  * @param {string} name 服务进程名
@@ -571,7 +579,7 @@ new Service(name = '', path = '', openDevTool = false);
 ```
 
 **使用举例**
-```
+``` js
 // -----------------------主进程-----------------------
 const service = new Service('service', path.join(__dirname, 'app.js'), true);
 service.on('success', function () {
@@ -592,11 +600,11 @@ service.on('closed', function () {
 
 **主进程、渲染进程API**
 
-```
+``` js
 windowCenter: object 进程集合key=进程名 value=进程实例，默认{}
 ```
 **使用举例**
-```
+``` js
 // -----------------------主进程-----------------------
 const service = new Service('service', path.join(__dirname, 'app.js'), true);
 const winA = new BaseWindow('winA', {});
@@ -624,12 +632,12 @@ windowCenter['winA'].on('ready-to-show', () => {
 
 **setDefaultRequestTimeout 设置响应超时时间**
 
-```
+``` js
 setDefaultRequestTimeout(timeout = 0);
 ```
 **request 请求**
 
-```
+``` js
 /**
  * @param {string} toId 进程ID（注册通信进程模块名） 
  * @param {string} eventName 事件名 
@@ -642,7 +650,7 @@ request(toId, eventName, data, timeout)
 
 **response 响应**
 
-```
+``` js
 /**
  * 注册响应服务
  * @param {string} eventName 事件名  
@@ -652,7 +660,7 @@ response(eventName, callback)
 ```
 
 **unresponse 注销响应服务**
-```
+``` js
 /**
  * @param {string} eventName 事件名  
  * @param {function} callback 回调
@@ -661,7 +669,7 @@ unresponse(eventName, callback)
 ```
 
 **publisher 发布**
-```
+``` js
 /**
  * @param {string} eventName 事件名  
  * @param {any} param 参数
@@ -670,28 +678,30 @@ publisher(eventName, param)
 ```
 
 **subscribe 订阅**
-```
+``` js
 /**
- * @param {string} toId 进程ID（注册通信进程模块名） 
- * @param {string} eventName 事件名 
+ * @param {string} toId BaseWindow窗口名，不传，则默认订阅所有窗口进程
+ * @param {string | array} eventName 事件名 
  * @param {function} callback 回调
+ * Auguments.length === 2，则表示订阅所有进程
  */
 subscribe(toId, eventName, callback)
 ```
 
 **unsubscribe 取消订阅**
-```
+``` js
 /**
- * @param {string} toId 进程ID（注册通信进程模块名） 
+ * @param {string} toId BaseWindow窗口名，不传，则默认取消订阅所有窗口进程
  * @param {string} eventName 事件名 
  * @param {function} callback 回调
+ * Auguments.length === 2，则表示取消订阅所有进程
  */
 unsubscribe(toId, eventName, callback)
 ```
 
 **使用举例**
 
-```
+``` js
 // ---------------------winA---------------------
 const { ipc } = require('sugar-electron');  
 // 注册响应服务A1
@@ -720,7 +730,7 @@ btn1.onclick = () => {
 
 **createStore 初始化state**
 
-```
+``` js
 /**
  * @param {object} store
  */
@@ -731,7 +741,7 @@ createStore(store)
 
 **setState 设置state**
 
-```
+``` js
 /**
  * 单个值设置
  * @param {string} key
@@ -750,7 +760,7 @@ createStore(store)
 
 **subscribe 订阅当前module的值变化通知**
 
-```
+``` js
 /**
  * @param {function} cb 订阅回调
  * @return {function} 返回注销订阅function
@@ -759,7 +769,7 @@ subscribe(cb)
 ```
 **unsubscribe 注销订阅**
 
-```
+``` js
 /**
  * @param {funtion} cb 订阅回调
  */
@@ -767,8 +777,8 @@ unsubscribe(cb)
 ```
 
 **getModule 获取module**
-
-```
+ 
+``` js
 /**
  * 获取module
  * @param {string} moduleName 模块名
@@ -780,7 +790,7 @@ getModule(moduleName)
 
 **getModules 获取所有modules**
 
-```
+``` js
 /**
  * @return {array} [module, module, module]
  */
