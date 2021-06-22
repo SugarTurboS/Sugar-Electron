@@ -1,14 +1,8 @@
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
-// eslint-disable-next-line no-undef
-const DEFAULT_PATH = path.join(process.cwd(), 'config');
-const APP_DATA = path.join(os.homedir(), '/AppData/Roaming');
-const { SUGAR_OPTION, CONFIG_GET } = require('../const');
-global[SUGAR_OPTION].configPath = DEFAULT_PATH;
-const config = {};
-let hasInit = false;
-let appName = '';
+const { app } = require('electron');
+const { CONFIG } = require('../const');
+
 // 获取环境变量参数
 function getProcessArgv() {
     const argv = {};
@@ -24,15 +18,17 @@ function getProcessArgv() {
     return argv;
 }
 // 从appData获取配置
-function getConfigFromAppData(appName) {
-    const configPath = path.join(APP_DATA, appName, 'config.json');
+function getConfigFromAppData(useAppPathConfig) {
     let config = {};
-    try {
-        // 从appData读取环境变量
-        const res = fs.readFileSync(configPath);
-        config = JSON.parse(res.toString());
-    } catch (error) {
-        console.error('获取appData配置失败，不影响使用');
+    if (useAppPathConfig) {
+        try {
+            const configPath = path.join(app.getPath('userData'), 'config.json');
+            // 从appData读取环境变量
+            const res = fs.readFileSync(configPath);
+            config = JSON.parse(res.toString());
+        } catch (error) {
+            console.log('[sugar-electron] get appData fail，can continue to use');
+        }
     }
     return Object.assign({ env: '', config: {} }, config);
 }
@@ -41,7 +37,7 @@ function getLocalBaseConfig(configPath) {
     try {
         return require(path.join(configPath, 'config.base')) || {}
     } catch (error) {
-        console.error(error);
+        console.error('[sugar-electron]', error);
         return {};
     }
 }
@@ -51,39 +47,23 @@ function getLocalConfig(configPath, env) {
     try {
         return require(path.join(configPath, configName)) || {};
     } catch (error) {
-        console.error(error);
+        console.error('[sugar-electron]', error);
         return {};
     }
 }
 
-const getConfig = global[CONFIG_GET] = function () {
-    if (hasInit === false) {
-        const appData = getConfigFromAppData(appName);
+class Config {
+    getConfig({ useAppPathConfig, configPath }) {
+        const appData = getConfigFromAppData(useAppPathConfig);
         const argv = getProcessArgv();
         const env = appData.env || argv.env || '';
-        const baseLocalConfig = getLocalBaseConfig(global[SUGAR_OPTION].configPath);
-        const localConfig = getLocalConfig(global[SUGAR_OPTION].configPath, env);
-        Object.assign(config, { argv }, baseLocalConfig, localConfig, appData.config);
-        hasInit = true;
+        const baseLocalConfig = getLocalBaseConfig(configPath);
+        const localConfig = getLocalConfig(configPath, env);
+        Object.assign(this, { argv }, baseLocalConfig, localConfig, appData.config);
+        return this;
     }
-    return config;
 }
 
-/**
- * 设置参数
- * @param {object} params
- * option.appName 应用名
- * option.configPath 默认配置目录路径，如果不传则自动加载根目录config目录 
- * */
-const setOption = function(params = {}) {
-    appName = params.appName || '';
-    global[SUGAR_OPTION].configPath = params.configPath;
-    return getConfig();
-}
-
-config.getConfig = getConfig;
-config.setOption = setOption;
-
+const config = new Config();
+global[CONFIG] = config;
 module.exports = config;
-
-

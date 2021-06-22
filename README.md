@@ -20,7 +20,7 @@
 ## 安装
 
 ```bash
-npm i sugar-electron --save-dev
+npm i sugar-electron
 ```
 
 ## 脚手架
@@ -408,15 +408,15 @@ config
 
 **流程图：**
 
-![image](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9zdG9yZS1nMS5zZWV3by5jb20vZWFzaWNsYXNzLXB1YmxpYy8xM2VlNmJmNzQ4NTE0OTUzYTNhNjdmOWMyMTYwNmEyOA?x-oss-process=image/format,png)
+![image](https://store-g1.seewo.com/easiclass-public/7132693d3a8c429f9ec1bb650a8034fc)
 
 ### 举个例子
-
-
 ```
 // 主进程
-const { config } = require('sugar-electron');
-global.config = config.setOption({ appName: 'sugar-electron', configPath: path.join(__dirname, 'config') });
+const { config, start } = require('sugar-electron');
+start().then(() => {
+  console.log(config);
+});
 
 // 渲染进程
 const { config } = require('sugar-electron');
@@ -501,6 +501,7 @@ exports.adpter = {
     path: path.join(__dirname, '../plugins/adpter'),  // 插件绝对路径
     package: 'adpter',  // 插件包名，如果package与path同时存在，则package优先级更高
     enable: true, // 是否启动插件
+    env: ['main', 'render'], // 插件运行环境，main在主进程安装，render在渲染进程安装
     include: ['winA'], // 插件使用范围，如果为空，则所有渲染进程安装
     params: { timeout: 20000 } // 传入插件参数
 };
@@ -514,21 +515,21 @@ const { plugins } = require('sugar-electron');
 const res = await plugins.adpter.callAPI('FETCH_DATA_1', {});
 ```
 
-## 自动初始化核心模块
-使用过egg开发者应该知道，egg基础功能模块会根据对应的目录自动初始化。sugar-electron也提供根据目录自动初始化的能力。只需要使用框架启动接口start传入配置参数即可完成核心模块自动初始化
+## 启动框架
+启动框架，初始化框架核心模块，且在app.isReady() === true，返回Promise.resolve();
 
 ### 举个例子
 
 ```
 const { start } = require('sugar-electron');
 start({
-    appName: '应用名',
-    basePath: '启动目录',
-    configPath: '配置中心目录', // 可选，默认basePath + './config'
-    storePath: '进程状态共享目录', // 可选，默认basePath + './store'
-    windowCenterPath: '配置中心目录', // 可选，默认basePath + './windowCenter'
-    pluginsPath: '插件目录', // 可选，默认basePath + './plugins'
-})
+    useAppPathConfig: false, // 可选，是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并
+    basePath: '启动目录', // 可选，默认根目录
+    configPath: '配置中心目录', // 可选，默认basePath/config
+    storePath: '进程状态共享目录', // 可选，默认basePath/store
+    windowCenterPath: '配置中心目录', // 可选，默认basePath/windowCenter
+    pluginsPath: '插件目录', // 可选，默认basePath/plugins
+}).then(() => console.log('app ready'));
 ```
 
 # 注意事项
@@ -550,20 +551,21 @@ const { ipc, store, ... } = require('sugar-electron/render')
 # API
 
 ## start
-框架启动接口，自动挂载config、store、windowCenter、plugins模块
+启动框架，初始化框架核心模块，且在app.isReady() === true，返回Promise.resolve();
 
 **主进程API**
 
 ```
 /**
- * 启动sugar
+ * 自动判断app.whenReady启动框架初始化
  * @param {object} options 启动参数
- * @param {string} options.appName 应用名
- * @param {string} options.basePath 启动目录
- * @param {string} options.configPath 配置目录，默认basePath + './config'
- * @param {string} options.storePath 进程状态共享目录，默认basePath + './store'
- * @param {string} options.windowCenterPath 窗口中心目录，默认basePath + './windowCenter'
- * @param {string} options.pluginsPath 插件目录，默认basePath + './plugins'
+ * @param {string} options.useAppPathConfig 是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并，默认false
+ * @param {string} options.basePath 启动目录，默认根目录
+ * @param {string} options.configPath 配置目录，默认basePath/config
+ * @param {string} options.storePath 进程状态共享目录，默认basePath/store
+ * @param {string} options.windowCenterPath 窗口中心目录，默认basePath/windowCenter
+ * @param {string} options.pluginsPath 插件目录，默认basePath/plugins
+ * @return {Promise}
 */
 start(opions)
 ```
@@ -571,12 +573,12 @@ start(opions)
 ```
 // -----------------------主进程-----------------------
 start({
-    appName: string, 应用名，%appData%目录
-    basePath: string, 启动目录
-    configPath: string, 配置目录
-    storePath: string, 进程状态共享目录
-    windowCenterPath: string, 窗口中心目录
-    pluginsPath: string 插件目录
+    useAppPathConfig: boolean,
+    basePath: string,
+    configPath: string,
+    storePath: string,
+    windowCenterPath: string,
+    pluginsPath: string
 });
 ```
 
@@ -607,13 +609,19 @@ setDefaultOptions(option)
  */
 open(option)
 ```
-
 **getInstance [实例方法]**
 ```
 /**
  * @return {browserWindow}
  */
-getInstance(option)
+getInstance()
+```
+**isInstanceExist [实例方法]判断窗口实例是否存在**
+```
+/**
+ * @return {browserWindow}
+ */
+isInstanceExist()
 ```
 
 **publisher [实例方法]向当前窗口发布通知，可参考ipc模块**
@@ -782,9 +790,10 @@ publisher(eventName, param)
 **subscribe 订阅**
 ```
 /**
- * @param {string} toId 进程ID（注册通信进程模块名） 
- * @param {string} eventName 事件名 
+ * @param {string} toId BaseWindow窗口名，不传，则默认订阅所有窗口进程
+ * @param {string | array} eventName 事件名 
  * @param {function} callback 回调
+ * Auguments.length === 2，则表示订阅所有进程
  */
 subscribe(toId, eventName, callback)
 ```
@@ -792,9 +801,10 @@ subscribe(toId, eventName, callback)
 **unsubscribe 取消订阅**
 ```
 /**
- * @param {string} toId 进程ID（注册通信进程模块名） 
+ * @param {string} toId BaseWindow窗口名，不传，则默认取消订阅所有窗口进程
  * @param {string} eventName 事件名 
  * @param {function} callback 回调
+ * Auguments.length === 2，则表示取消订阅所有进程
  */
 unsubscribe(toId, eventName, callback)
 ```

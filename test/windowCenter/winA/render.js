@@ -4,6 +4,7 @@ window.onload = function () {
     const btn1 = document.querySelector('#btn1');
     const btn2 = document.querySelector('#btn2');
     const btn3 = document.querySelector('#btn3');
+    const btn4 = document.querySelector('#btn4');
     const text = document.querySelector('#text');
     // 获取窗口B句柄
     const winB = windowCenter.winB;
@@ -36,5 +37,11 @@ window.onload = function () {
         const r2 = await winB.request('B2', '我是winA');
         text.innerHTML += `<p>${r2}</p>`;
     }
+
+    btn4.onclick = async function () {
+        const size = await winB.getSize();
+        console.log(size);
+    }
+
 }
 

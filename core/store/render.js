@@ -54,9 +54,9 @@ module.exports = {
             state: remote.getGlobal(key),
             getModule: moduleName => this.getModule(moduleName, _modules),
             setState: (...args) => this.setState(...args, _modules),
-            subscribe: cb => this.subscribe(cb, _modules),
-            unsubscribe: cb => this.unsubscribe(cb, _modules),
-            getModules: () => this.getModules(_modules)
+            subscribe: (cb) => this.subscribe(cb, _modules),
+            unsubscribe: (cb) => this.unsubscribe(cb, _modules),
+            getModules: (modules) => this.getModules(modules)
         }
     }
 };
