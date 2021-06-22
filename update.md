@@ -1,7 +1,7 @@
 ## v1.1.0
 1、 start(option)函数自动判断app.whenReady后执行框架初始化
 
-```
+``` js
 // 旧
 const { app } = require('electron');
 const { start } = require('sugar-electron');
@@ -21,7 +21,7 @@ start().then(() => {
 - 添加useAppPathConfig:boolean配置是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并，默认false。
 - config.setOption({ appName, configPath })函数，改成config.getConfig({ useAppPathConfig, configPath })
 
- ```
+ ``` js
 // 旧
 const { app } = require('electron');
 const { start, config } = require('sugar-electron');
@@ -63,7 +63,7 @@ start().then(() => {
 
 4、插件模块plugins，增加插件配置env，插件运行环境，如果为空，则所有渲染进程安装
 
-```
+``` js
 const path = require('path');
 exports.log = {
     // 如果根路径plugins目录有对应的插件名，则不需要配置path或package
