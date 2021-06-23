@@ -18,7 +18,7 @@ start().then(() => {
 ```
 
 2、配置中心模块config
-- 添加useAppPathConfig:boolean配置是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并，默认false。
+- 添加useAppPathConfig:boolean配置，是否从应用安装系统缓存目录%appData%/应用/config.json中读取配置合并，默认false。
 - config.setOption({ appName, configPath })函数，改成config.getConfig({ useAppPathConfig, configPath })
 
  ``` js
