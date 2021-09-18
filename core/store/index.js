@@ -5,3 +5,4 @@ if (isRenderProcess) {
 } else {
     module.exports = require('./main');
 }
+

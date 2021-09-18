@@ -30,3 +30,4 @@ class Plugins {
 }
 
 module.exports = new Plugins();
+

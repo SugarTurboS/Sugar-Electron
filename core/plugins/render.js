@@ -42,3 +42,4 @@ function getDefaultPath() {
 }
 
 module.exports = installPlugins();
+
