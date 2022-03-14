@@ -1,0 +1,3 @@
+export const CONFIG = 'ELECTRON_SUGAR:CONFIG';
+export const SUGAR_OPTION = 'ELECTRON_SUGAR:SUGAR_OPTION';
+export const MAIN_PROCESS_NAME = 'main';
